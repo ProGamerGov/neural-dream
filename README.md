@@ -37,7 +37,7 @@ Clockwise from upper left: 119, 1, 29, and all channels of the `inception_4d_3x3
 
 Clockwise from upper left: 25, 108, 25 & 108, and 25 & 119 from the `inception_4d_3x3_reduce` layer
 
-<div align="center">
+<div align="center"> 
 <img src="https://raw.githubusercontent.com/ProGamerGov/neural-dream/master/examples/outputs/tubingen_c25.png" height="250px">
 <img src="https://raw.githubusercontent.com/ProGamerGov/neural-dream/master/examples/outputs/tubingen_c108.png" height="250px">
 <img src="https://raw.githubusercontent.com/ProGamerGov/neural-dream/master/examples/outputs/tubingen_c25_119.png" height="250px">
@@ -64,46 +64,53 @@ the top 10 strongest channels, and all channels of the `inception_4e_3x3_reduce`
 
 ## Setup:
 
-Dependencies:
-* [PyTorch](http://pytorch.org/)
 
-Optional dependencies:
-* For CUDA backend:
-  * CUDA 7.5 or above
-* For cuDNN backend:
-  * cuDNN v6 or above
-* For ROCm backend:
-  * ROCm 2.1 or above
-* For MKL backend:
-  * MKL 2019 or above
-* For OpenMP backend:
-  * OpenMP 5.0 or above
+While you can use Python 2's pip, it's recommended that you use Python 3's pip:
 
-After installing the dependencies, you'll need to run the following script to download the BVLC GoogleNet model:
 ```
-python models/download_models.py
+# in a terminal, run the command
+pip3 install neural-dream
 ```
+
+
+After installing neural-dream, you'll need to run the following script to download BVLC GoogleNet and NIN models:
+
+
+```
+neural-style -download_models
+```
+
+By default the models are downloaded to your home directory, but you can specify a download location with:
+
+```
+neural-dream -download_models -download_path <download_path>
+```
+
 This will download the original [BVLC GoogleNet model](https://github.com/BVLC/caffe/tree/master/models/bvlc_googlenet).
 
-If you have a smaller memory GPU then using the NIN Imagenet model could be an alternative to the BVLC GoogleNet model, though it's DeepDream quality is nowhere near that of the other models. You can get the details on the model from [BVLC Caffe ModelZoo](https://github.com/BVLC/caffe/wiki/Model-Zoo). The NIN model is downloaded when you run the `download_models.py` script with default parameters.
+If you have a smaller memory GPU then using the NIN Imagenet model could be an alternative to the BVLC GoogleNet model, though it's DeepDream quality is nowhere near that of the other models. You can get the details on the model from [BVLC Caffe ModelZoo](https://github.com/BVLC/caffe/wiki/Model-Zoo). The NIN model is downloaded when you run `neural-dream -download_models`.
 
-To download most of the compatible models, run the `download_models.py` script with following parameters:
+To download most of the compatible models, run the following command:
 
 ```
-python models/download_models.py -models all
+neural-dream -download_models all
 ```
 
-You can find detailed installation instructions for Ubuntu and Windows in the [installation guide](INSTALL.md).
+To download all Caffe GoogleNet models, run the following command:
+
+```
+neural-dream -download_models all-caffe-googlenet
+```
 
 ## Usage
 Basic usage:
 ```
-python neural_dream.py -content_image <image.jpg>
+neural-dream -content_image <image.jpg>
 ```
 
 cuDNN usage with NIN Model:
 ```
-python neural_dream.py -content_image examples/inputs/brad_pitt.jpg -output_image pitt_nin_cudnn.png -model_file models/nin_imagenet.pth -gpu 0 -backend cudnn -num_iterations 10 -seed 876 -dream_layers relu0,relu3,relu7,relu12 -dream_weight 10 -image_size 512 -optimizer adam -learning_rate 0.1
+neural-dream -content_image examples/inputs/brad_pitt.jpg -output_image pitt_nin_cudnn.png -model_file models/nin_imagenet.pth -gpu 0 -backend cudnn -num_iterations 10 -seed 876 -dream_layers relu0,relu3,relu7,relu12 -dream_weight 10 -image_size 512 -optimizer adam -learning_rate 0.1
 ```
 
 ![cuDNN NIN Model Picasso Brad Pitt](https://raw.githubusercontent.com/ProGamerGov/neural-dream/master/examples/outputs/pitt_nin_cudnn.png)
@@ -184,10 +191,13 @@ path or a full absolute path.
   take a bit more memory, but may significantly speed up the cuDNN backend.
 * `-clamp`: If this flag is enabled, every iteration will clamp the output image so that it is within the model's input range.
 * `-adjust_contrast`: A value between `0` and `100.0` for altering the image's contrast (ex: `99.98`). Default is set to 0 to disable contrast adjustments.
-* `-label_file`:  Path to the `.txt` category list file for classification and channel selection.
+* `-label_file`:  Path to the `.txt` category list file for classification and channel selection. 
 * `-random_transforms`: Whether to use random transforms on the image; either `none`, `rotate`, `flip`, or `all`; default is `none`.
 * `-classify`: Display what the model thinks an image contains. Integer for the number of choices ranked by how likely each is.
 
+**Download options**:
+* `-download_path`: Path to where the VGG-19, VGG-16, and NIN models will be downloaded to. If no path is specified, the models will be downloaded to your home directory.
+* `-download_models`: Comma separated list of which models to download. Choose from almost any combination of: `all`, `caffe-vgg16`, `caffe-vgg19`, `caffe-nin`, `caffe-googlenet-places205`, `caffe-googlenet-places365`, `caffe-googlenet-bvlc`, `caffe-googlenet-cars`, `caffe-googlenet-sos`, `caffe-resnet-opennsfw`, `pytorch-vgg16`, `pytorch-vgg19`, `pytorch-googlenet`, `pytorch-inceptionv3`, `tensorflow-inception5h`, `all-caffe`, `all-caffe-googlenet`. Default is `caffe-googlenet-bvlc,caffe-nin`.
 
 ## Frequently Asked Questions
 
@@ -208,11 +218,11 @@ If you are running on a GPU, you can also try running with `-backend cudnn` to r
 
 **Solution:** Due to a mix up with layer locations, older models require a fix to be compatible with newer versions of PyTorch. The included [`donwload_models.py`](https://github.com/ProGamerGov/neural-dream/blob/master/models/download_models.py) script will automatically perform these fixes after downloading the models.
 
-**Problem:** Get the following error message:
+**Problem:** Get the following error message: 
 
 `Given input size: (...). Calculated output size: (...). Output size is too small`
 
-**Solution:** Use a larger `-image_size` value and/or adjust the octave parameters so that the smallest octave size is larger.
+**Solution:** Use a larger `-image_size` value and/or adjust the octave parameters so that the smallest octave size is larger. 
 
 ## Memory Usage
 By default, `neural-dream` uses the `nn` backend for convolutions and Adam for optimization. These give good results, but can both use a lot of memory. You can reduce memory usage with the following:
@@ -221,7 +231,7 @@ By default, `neural-dream` uses the `nn` backend for convolutions and Adam for o
 * **Reduce image size**: You can reduce the size of the generated image to lower memory usage;
   pass the flag `-image_size 256` to generate an image at half the default size.
 
-With the default settings, neural-dream uses about 1.3 GB of GPU memory on my system; switching to cuDNN reduces the GPU memory footprint to about 1 GB.
+With the default settings, neural-dream uses about 1.3 GB of GPU memory on my system; switching to ADAM and cuDNN reduces the GPU memory footprint to about 1 GB.
 
 
 ## Multi-GPU scaling
