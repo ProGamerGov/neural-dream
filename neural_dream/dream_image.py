@@ -34,14 +34,15 @@ def zoom(input, crop_val, mode='percent'):
     return input
 
 # Create gif from results
-def create_gif(frames_dir, duration=100):
-    ext = [".jpg", ".jpeg", ".png", ".tiff"]	
+def create_gif(frames_dir, base_name=None, duration=100):
+    ext = [".jpg", ".jpeg", ".png", ".tiff"]
+	
     image_list = [file for file in os.listdir(frames_dir) if os.path.splitext(file)[1].lower() in ext]
     if "_" in image_list[0]:
-        base_name = image_list[0].rsplit('_', 1)[0]	
+        base_name = image_list[0].rsplit('_', 1)[0] if base_name == None else base_name
         fsorted = sorted(image_list,key=lambda x: int(os.path.splitext(x)[0].rsplit('_', 1)[1]))		
     else:
-        base_name = image_list[0].rsplit('.', 1)[0]	
+        base_name = image_list[0].rsplit('.', 1)[0] if base_name == None else base_name	
         fsorted = sorted(image_list[1:],key=lambda x: int(os.path.splitext(x)[0].rsplit('_', 1)[1]))
         fsorted.append(image_list[0])		
 
