@@ -50,4 +50,7 @@ def create_gif(frames_dir='.', base_name=None, duration=100):
         fsorted.append(image_list[0])		
 
     frames = [Image.open(os.path.join(frames_dir, im)).convert('RGB') for im in fsorted]
+    w_list, h_list = [list(im.size)[0] for im in frames], [list(im.size)[1] for im in frames] 
+    w, h = most_common(w_list), most_common(h_list)
+    frames = [im for im in frames if list(im.size)[0] == w and list(im.size)[1] == h]
     frames[0].save(os.path.join(frames_dir, base_name+'.gif'), format='GIF', append_images=frames[1:], save_all=True, duration=duration, loop=0)
