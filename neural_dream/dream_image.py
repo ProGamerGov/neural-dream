@@ -43,22 +43,23 @@ def common_size(l, v):
 
 
 # Create gif from images
-def create_gif(base_name=None, duration=100):
+def create_gif(base_name, duration=100):
     if '/' not in base_name and '\\' not in base_name:
         frames_dir = '.'
     elif '/' in base_name: 
-        frames_dir = base_name.rsplit('/', 1)[0]
+        frames_dir, base_name = base_name.rsplit('/', 1)
     elif '\\' in base_name: 
-        frames_dir = base_name.rsplit('\\', 1)[0]
+        frames_dir, base_name = base_name.rsplit('\\', 1)
+    base_name = base_name.rsplit('.', 1)[0]
 
     ext = [".jpg", ".jpeg", ".png", ".tiff"]
     image_list = [file for file in os.listdir(frames_dir) if os.path.splitext(file)[1].lower() in ext]
     image_list = [im for im in image_list if base_name in im]
     if "_" in image_list[0]:
-        base_name = image_list[0].rsplit('_', 1)[0] if base_name == None else base_name
+        base_name = image_list[0].rsplit('_', 1)[0]
         fsorted = sorted(image_list,key=lambda x: int(os.path.splitext(x)[0].rsplit('_', 1)[1]))		
     else:
-        base_name = image_list[0].rsplit('.', 1)[0] if base_name == None else base_name	
+        base_name = image_list[0].rsplit('.', 1)[0]	
         fsorted = sorted(image_list[1:],key=lambda x: int(os.path.splitext(x)[0].rsplit('_', 1)[1]))
         fsorted.append(image_list[0])		
 
