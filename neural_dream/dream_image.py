@@ -35,6 +35,13 @@ def zoom(input, crop_val, mode='percent'):
     input = resize_tensor(input, (h,w))
     return input
 
+
+# Get most common Pillow Image size from list
+def common_size(l, v):
+    l = [list(im.size)[v] for im in l] 
+    return max(set(l), key = l.count) 
+
+
 # Create gif from images
 def create_gif(frames_dir='.', base_name=None, duration=100):
     ext = [".jpg", ".jpeg", ".png", ".tiff"]	
@@ -50,7 +57,6 @@ def create_gif(frames_dir='.', base_name=None, duration=100):
         fsorted.append(image_list[0])		
 
     frames = [Image.open(os.path.join(frames_dir, im)).convert('RGB') for im in fsorted]
-    w_list, h_list = [list(im.size)[0] for im in frames], [list(im.size)[1] for im in frames] 
-    w, h = most_common(w_list), most_common(h_list)
+    w, h = common_size(frames, 0), common_size(frames, 1)
     frames = [im for im in frames if list(im.size)[0] == w and list(im.size)[1] == h]
     frames[0].save(os.path.join(frames_dir, base_name+'.gif'), format='GIF', append_images=frames[1:], save_all=True, duration=duration, loop=0)
