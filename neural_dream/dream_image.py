@@ -35,7 +35,7 @@ def zoom(input, crop_val, mode='percent'):
     input = resize_tensor(input, (h,w))
     return input
 
-# Create gif from results
+# Create gif from images
 def create_gif(frames_dir, base_name=None, duration=100):
     ext = [".jpg", ".jpeg", ".png", ".tiff"]	
     image_list = [file for file in os.listdir(frames_dir) if os.path.splitext(file)[1].lower() in ext]
