@@ -67,6 +67,10 @@ parser.add_argument("-fft_block", type=int, default=25)
 parser.add_argument("-zoom", type=int, default=0)
 parser.add_argument("-zoom_mode", choices=['percent', 'pixel'], default='percent')
 
+# Gif options
+parser.add_argument("-create_gif", action='store_true')
+parser.add_argument("-frame_duration", type=int, default=100)
+
 # Other options
 parser.add_argument("-original_colors", type=int, choices=[0, 1], default=0)
 parser.add_argument("-pooling", choices=['avg', 'max'], default='max')
