@@ -44,16 +44,10 @@ def common_size(l, v):
 
 # Create gif from images
 def create_gif(base_name, duration=100):
-    if '/' not in base_name and '\\' not in base_name:
+    frame_dir, base_name = os.path.split(base_name)
+    if frame_dir == '':
         frames_dir = '.'
-    elif '/' in base_name: 
-        frames_dir, base_name = base_name.rsplit('/', 1)
-    elif '\\' in base_name: 
-        frames_dir, base_name = base_name.rsplit('\\', 1)
-    if "_" in base_name:
-        base_name = base_name.rsplit('_', 1)[0]
-    else:
-        base_name = base_name.rsplit('.', 1)[0]
+    base_name = base_name.rsplit('.', 1)[0]
 
     ext = [".jpg", ".jpeg", ".png", ".tiff"]
     image_list = [file for file in os.listdir(frames_dir) if os.path.splitext(file)[1].lower() in ext]
