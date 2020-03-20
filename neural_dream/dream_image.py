@@ -32,3 +32,18 @@ def zoom(input, crop_val, mode='percent'):
     input = center_crop(input.clone(), crop_val, mode=mode)
     input = resize_tensor(input, (h,w))
     return input
+
+# Create gif from results
+def create_gif(frames_dir, duration=100):
+    ext = [".jpg", ".jpeg", ".png", ".tiff"]	
+    image_list = [file for file in os.listdir(frames_dir) if os.path.splitext(file)[1].lower() in ext]
+    if "_" in image_list[0]:
+        base_name = image_list[0].rsplit('_', 1)[0]	
+        fsorted = sorted(image_list,key=lambda x: int(os.path.splitext(x)[0].rsplit('_', 1)[1]))		
+    else:
+        base_name = image_list[0].rsplit('.', 1)[0]	
+        fsorted = sorted(image_list[1:],key=lambda x: int(os.path.splitext(x)[0].rsplit('_', 1)[1]))
+        fsorted.append(image_list[0])		
+
+    frames = [Image.open(os.path.join(frames_dir, im)).convert('RGB') for im in fsorted]
+    frames[0].save(os.path.join(frames_dir, base_name+'.gif'), format='GIF', append_images=frames[1:], save_all=True, duration=duration, loop=0)
