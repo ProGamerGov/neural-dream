@@ -35,8 +35,7 @@ def zoom(input, crop_val, mode='percent'):
 
 # Create gif from results
 def create_gif(frames_dir, base_name=None, duration=100):
-    ext = [".jpg", ".jpeg", ".png", ".tiff"]
-	
+    ext = [".jpg", ".jpeg", ".png", ".tiff"]	
     image_list = [file for file in os.listdir(frames_dir) if os.path.splitext(file)[1].lower() in ext]
     if "_" in image_list[0]:
         base_name = image_list[0].rsplit('_', 1)[0] if base_name == None else base_name
