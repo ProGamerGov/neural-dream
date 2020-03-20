@@ -299,6 +299,9 @@ def save_output(t, save_img, content_image, iter_name, model_mean):
         disp = original_colors(deprocess(content_image.clone(), params.model_type, model_mean), disp)
 
     disp.save(str(filename))
+    if t == params.num_iterations:
+        dream_image.create_gif(output_filename, params.frame_duration)
+    
 
 
 def maybe_save(t, save_img, content_image, input_mean):
