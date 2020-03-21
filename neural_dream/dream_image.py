@@ -44,8 +44,8 @@ def common_size(l, v):
 
 # Create gif from images
 def create_gif(base_name, duration=100):
-    frame_dir, base_name = os.path.split(base_name)
-    if frame_dir == '':
+    frames_dir, base_name = os.path.split(base_name)
+    if frames_dir == '':
         frames_dir = '.'
     base_name = base_name.rsplit('.', 1)[0]
 
