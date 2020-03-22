@@ -38,8 +38,8 @@ def zoom(input, crop_val, mode='percent'):
 
 # Get most common Pillow Image size from list
 def common_size(l, v):
-    l = [list(im.size)[v] for im in l] 
-    return max(set(l), key = l.count) 
+    l = [list(im.size)[v] for im in l]
+    return max(set(l), key = l.count)
 
 
 # Create gif from images
@@ -53,10 +53,10 @@ def create_gif(base_name, duration=100):
     image_list = [file for file in os.listdir(frames_dir) if os.path.splitext(file)[1].lower() in ext]
     image_list = [im for im in image_list if base_name in im]
     if "_" in image_list[0]:
-        fsorted = sorted(image_list,key=lambda x: int(os.path.splitext(x)[0].rsplit('_', 1)[1]))		
+        fsorted = sorted(image_list,key=lambda x: int(os.path.splitext(x)[0].rsplit('_', 1)[1]))
     else:
         fsorted = sorted(image_list[1:],key=lambda x: int(os.path.splitext(x)[0].rsplit('_', 1)[1]))
-        fsorted.append(image_list[0])		
+        fsorted.append(image_list[0])
 
     frames = [Image.open(os.path.join(frames_dir, im)).convert('RGBA') for im in fsorted]
     w, h = common_size(frames, 0), common_size(frames, 1)
