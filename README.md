@@ -166,10 +166,6 @@ path or a full absolute path.
 * `-use_fft`: Whether to enable Fast Fourier transform (FFT) decorrelation.
 * `-fft_block`: The size of your FFT frequency filtering block. Default is `25`.
 
-**GIF Options:**
-* `-create_gif`: Whether to create a GIF from the output images after all iterations have been completed.
-* `-frame_duration`: The duration for each GIF frame in milliseconds. Default is `100`.
-
 **Help Options:**
 * `-print_layers`: Pass this flag to print the names of all usable layers for the selected model.
 * `-print_channels`: Pass this flag to print all the selected channels.

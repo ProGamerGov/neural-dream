@@ -1,5 +1,6 @@
 import os
 import copy
+import math
 import random
 import torch
 import torch.nn as nn
@@ -65,10 +66,6 @@ parser.add_argument("-fft_block", type=int, default=25)
 # Zoom options
 parser.add_argument("-zoom", type=int, default=0)
 parser.add_argument("-zoom_mode", choices=['percent', 'pixel'], default='percent')
-
-# Gif options
-parser.add_argument("-create_gif", action='store_true')
-parser.add_argument("-frame_duration", type=int, default=100)
 
 # Other options
 parser.add_argument("-original_colors", type=int, choices=[0, 1], default=0)
@@ -298,9 +295,6 @@ def save_output(t, save_img, content_image, iter_name, model_mean):
         disp = original_colors(deprocess(content_image.clone(), params.model_type, model_mean), disp)
 
     disp.save(str(filename))
-
-    if t == params.num_iterations and params.create_gif:
-        dream_image.create_gif(output_filename, params.frame_duration)
 
 
 def maybe_save(t, save_img, content_image, input_mean):
