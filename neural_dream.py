@@ -300,7 +300,7 @@ def save_output(t, save_img, content_image, iter_name, model_mean):
     disp.save(str(filename))
 
     if t == params.num_iterations and params.create_gif:
-        dream_image.create_gif(output_filename, params.frame_duration)    
+        dream_image.create_gif(output_filename, params.frame_duration)
 
 
 def maybe_save(t, save_img, content_image, input_mean):
