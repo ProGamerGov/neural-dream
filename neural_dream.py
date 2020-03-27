@@ -53,7 +53,7 @@ parser.add_argument("-channels", type=str, help="channels for DeepDream", defaul
 parser.add_argument("-channel_mode", choices=['all', 'strong', 'avg', 'weak', 'ignore'], default='all')
 parser.add_argument("-channel_capture", choices=['once', 'iter'], default='once')
 
-# Guassian Blur Options
+# Guassian Blur options
 parser.add_argument("-layer_sigma", type=float, default=0)
 
 # Laplacian pyramid options
@@ -71,6 +71,14 @@ parser.add_argument("-zoom_mode", choices=['percent', 'pixel'], default='percent
 # Gif options
 parser.add_argument("-create_gif", action='store_true')
 parser.add_argument("-frame_duration", type=int, default=100)
+
+# Tile options
+parser.add_argument("-tile_size", type=int, default=0)
+parser.add_argument("-overlap_percent", type=float, default=0.5)
+parser.add_argument("-print_tile", type=int, default=0)
+parser.add_argument("-disable_roll", action='store_true')
+parser.add_argument("-print_tile_iter", type=int, default=0)
+parser.add_argument("-image_capture_size", help="Image size for initial capture, and classification", type=int, default=0)
 
 # Other options
 parser.add_argument("-original_colors", type=int, choices=[0, 1], default=0)
@@ -92,23 +100,15 @@ parser.add_argument("-dream_layers", help="layers for DeepDream", default='incep
 
 parser.add_argument("-multidevice_strategy", default='4,7,29')
 
-# Help Options
+# Help options
 parser.add_argument("-print_layers", action='store_true')
 parser.add_argument("-print_channels", action='store_true')
 
-# Experimental Params
+# Experimental params
 parser.add_argument("-norm_percent", type=float, default=0)
 parser.add_argument("-abs_percent", type=float, default=0)
 parser.add_argument("-mean_percent", type=float, default=0)
 parser.add_argument("-percent_mode", choices=['slow', 'fast'], default='fast')
-
-# Tile options
-parser.add_argument("-tile_size", type=int, default=0)
-parser.add_argument("-overlap_percent", type=float, default=0.5)
-parser.add_argument("-print_tile", type=int, default=0)
-parser.add_argument("-disable_roll", action='store_true')
-parser.add_argument("-print_tile_iter", type=int, default=0)
-parser.add_argument("-image_capture_size", help="Image size for initial capture, and classification", type=int, default=0)
 params = parser.parse_args()
 
 
