@@ -9,6 +9,16 @@ def tensor_percentile(t, p=99.98):
     return t.view(-1).kthvalue(1 + round(0.01 * float(p) * (t.numel() - 1))).values.item()
 
 
+# Shift tensor, possibly randomly
+def roll_tensor(tensor, h_shift=None, w_shift=None):
+    if h_shift == None:
+        h_shift = torch.LongTensor(10).random_(-tensor.size(1), tensor.size(1))[0].item()
+    if w_shift == None:
+        w_shift = torch.LongTensor(10).random_(-tensor.size(2), tensor.size(2))[0].item()
+    tensor = torch.roll(torch.roll(tensor, shifts=h_shift, dims=2), shifts=w_shift, dims=3)
+    return tensor, h_shift, w_shift
+
+
 # Define an nn Module to perform guassian blurring
 class GaussianBlur(nn.Module):
     def __init__(self, k_size, sigma):

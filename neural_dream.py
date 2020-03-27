@@ -11,6 +11,7 @@ import neural_dream.dream_utils as dream_utils
 import neural_dream.loss_layers as dream_loss_layers
 import neural_dream.dream_image as dream_image
 import neural_dream.dream_model as dream_model
+import neural_dream.dream_tile as dream_tile
 from neural_dream.dream_auto import auto_model_mode, auto_mean
 
 import argparse
@@ -39,6 +40,7 @@ parser.add_argument("-print_octave_iter", type=int, default=0)
 parser.add_argument("-save_iter", type=int, default=1)
 parser.add_argument("-save_octave_iter", type=int, default=0)
 parser.add_argument("-output_image", default='out.png')
+parser.add_argument("-output_start_num", type=int, default=1)
 
 # Octave options
 parser.add_argument("-num_octaves", type=int, default=2)
@@ -99,6 +101,14 @@ parser.add_argument("-norm_percent", type=float, default=0)
 parser.add_argument("-abs_percent", type=float, default=0)
 parser.add_argument("-mean_percent", type=float, default=0)
 parser.add_argument("-percent_mode", choices=['slow', 'fast'], default='fast')
+
+# Tile options
+parser.add_argument("-tile_size", type=int, default=0)
+parser.add_argument("-overlap_percent", type=float, default=0.5)
+parser.add_argument("-print_tile", type=int, default=0)
+parser.add_argument("-disable_roll", action='store_true')
+parser.add_argument("-print_tile_iter", type=int, default=0)
+parser.add_argument("-image_capture_size", help="Image size for initial capture, and classification", type=int, default=0)
 params = parser.parse_args()
 
 
@@ -120,6 +130,7 @@ def main():
 
     content_image = preprocess(params.content_image, params.image_size, params.model_type, input_mean).type(dtype)
     clamp_val = 256 if params.model_type == 'caffe' else 1
+    output_start_num = params.output_start_num - 1 if params.output_start_num > 0 else 0
 
     if params.label_file != '':
         labels = load_label_file(params.label_file)
@@ -171,12 +182,20 @@ def main():
 
     for i in dream_losses:
         i.mode = 'capture'
-    net_base(base_img.clone())
+
+    if params.image_capture_size == 0:
+        net_base(base_img.clone())
+    else:
+        image_capture_size = tuple([int((float(params.image_capture_size) / max(base_img.size()))*x) for x in (base_img.size(2), base_img.size(3))])
+        net_base(dream_image.resize_tensor(base_img.clone(), (image_capture_size)))
 
     if params.channels != '-1' or params.channel_mode != 'all' and params.channels != '-1':
         print_channels(dream_losses, dream_layers, params.print_channels)
     if params.classify > 0:
-       feat = net_base(base_img.clone())
+       if params.image_capture_size == 0:
+           feat = net_base(base_img.clone())
+       else:
+           feat = net_base(dream_image.resize_tensor(base_img.clone(), (image_capture_size)))
        classify_img(feat)
 
     for i in dream_losses:
@@ -184,105 +203,238 @@ def main():
 
     current_img = new_img(base_img, -1)
     h, w = current_img.size(2), current_img.size(3)
-    octave_list = ocatve_calc((h,w), params.octave_scale, params.num_octaves, params.octave_mode)
-    print_octave_sizes(octave_list)
-
     total_dream_losses, total_loss = [], [0]
 
-    for iter in range(1, params.num_iterations+1):
-        for octave, octave_sizes in enumerate(octave_list, 1):
-            net = copy.deepcopy(net_base) if not has_inception else net_base
-            for param in net.parameters():
-                param.requires_grad = False
-            dream_losses, tv_losses, l2_losses = [], [], []
-            if not has_inception:
-                for i, layer in enumerate(net):
-                    if isinstance(layer, dream_loss_layers.TVLoss):
-                        tv_losses.append(layer)
-                    if isinstance(layer, dream_loss_layers.L2Regularizer):
-                        l2_losses.append(layer)
-                    if 'DreamLoss' in str(type(layer)):
-                        dream_losses.append(layer)
-            elif has_inception:
-                 net, dream_losses, tv_losses, l2_losses = dream_model.renew_net(start_params, net, loss_module_list, lm_layer_names)
+    if params.tile_size == 0:
+        octave_list = ocatve_calc((h,w), params.octave_scale, params.num_octaves, params.octave_mode)
+        print_octave_sizes(octave_list)
 
-            img = new_img(current_img.clone(), octave_sizes)
+        for iter in range(1, params.num_iterations+1):
+            for octave, octave_sizes in enumerate(octave_list, 1):
+                net = copy.deepcopy(net_base) if not has_inception else net_base
+                for param in net.parameters():
+                    param.requires_grad = False
+                dream_losses, tv_losses, l2_losses = [], [], []
+                if not has_inception:
+                    for i, layer in enumerate(net):
+                        if isinstance(layer, dream_loss_layers.TVLoss):
+                            tv_losses.append(layer)
+                        if isinstance(layer, dream_loss_layers.L2Regularizer):
+                            l2_losses.append(layer)
+                        if 'DreamLoss' in str(type(layer)):
+                            dream_losses.append(layer)
+                elif has_inception:
+                     net, dream_losses, tv_losses, l2_losses = dream_model.renew_net(start_params, net, loss_module_list, lm_layer_names)
 
-            net(img)
-            for i in dream_losses:
-                i.mode = 'loss'
-            for i in dream_losses:
-                i.mode = 'loss'
+                img = new_img(current_img.clone(), octave_sizes)
 
-            # Maybe normalize dream weight
-            if params.normalize_weights:
-                normalize_weights(dream_losses)
-
-            # Freeze the net_basework in order to prevent
-            # unnecessary gradient calculations
-            for param in net.parameters():
-                param.requires_grad = False
-
-            # Function to evaluate loss and gradient. We run the net_base forward and
-            # backward to get the gradient, and sum up losses from the loss modules.
-            # optim.lbfgs internally handles iteration and calls this function many
-            # times, so we manually count the number of iterations to handle printing
-            # and saving intermediate results.
-            num_calls = [0]
-            def feval():
-                num_calls[0] += 1
-                optimizer.zero_grad()
                 net(img)
-                loss = 0
+                for i in dream_losses:
+                    i.mode = 'loss'
+                for i in dream_losses:
+                    i.mode = 'loss'
 
+                # Maybe normalize dream weight
+                if params.normalize_weights:
+                    normalize_weights(dream_losses)
+
+                # Freeze the net_basework in order to prevent
+                # unnecessary gradient calculations
+                for param in net.parameters():
+                    param.requires_grad = False
+
+                # Function to evaluate loss and gradient. We run the net_base forward and
+                # backward to get the gradient, and sum up losses from the loss modules.
+                # optim.lbfgs internally handles iteration and calls this function many
+                # times, so we manually count the number of iterations to handle printing
+                # and saving intermediate results.
+                num_calls = [0]
+                def feval():
+                    num_calls[0] += 1
+                    optimizer.zero_grad()
+                    net(img)
+                    loss = 0
+
+                    for mod in dream_losses:
+                        loss += -mod.loss.to(backward_device)
+                    if params.tv_weight > 0:
+                        for mod in tv_losses:
+                            loss += mod.loss.to(backward_device)
+                    if params.l2_weight > 0:
+                        for mod in l2_losses:
+                            loss += mod.loss.to(backward_device)
+
+                    if params.clamp:
+                         img.clamp(0, clamp_val)
+                    if params.adjust_contrast > -1:
+                        img.data = dream_image.adjust_contrast(img, r=clamp_val, p=params.adjust_contrast)
+
+                    total_loss[0] += loss.item()
+
+                    loss.backward()
+
+                    maybe_print_octave_iter(num_calls[0], octave, params.octave_iter, dream_losses)
+                    maybe_save_octave(iter, num_calls[0], octave, img, content_image, input_mean)
+
+                    return loss
+
+                optimizer, loopVal = setup_optimizer(img)
+                while num_calls[0] <= params.octave_iter:
+                    optimizer.step(feval)
+
+                if octave == 1:
+                    for mod in dream_losses:
+                        total_dream_losses.append(mod.loss.item())
+                else:
+                    for d_loss, mod in enumerate(dream_losses):
+                        total_dream_losses[d_loss] += mod.loss.item()
+
+                if img.size(2) != h or img.size(3) != w:
+                    current_img = dream_image.resize_tensor(img.clone(), (h,w))
+                else:
+                    current_img = img.clone()
+
+            maybe_print(iter, total_loss[0], total_dream_losses)
+            maybe_save(iter, current_img, content_image, input_mean, output_start_num)
+            total_dream_losses, total_loss = [], [0]
+
+            if params.classify > 0:
+                if params.image_capture_size == 0:
+                    feat = net_base(current_img.clone())
+                else:
+                    feat = net_base(dream_image.resize_tensor(current_img.clone(), (image_capture_size)))
+                classify_img(feat)
+            if params.zoom > 0:
+                current_img = dream_image.zoom(current_img, params.zoom, params.zoom_mode)
+
+    else:
+        overlap_percent = params.overlap_percent / 100 if params.overlap_percent > 1 else params.overlap_percent
+        tile_height, tile_width, tile_pattern, num_tiles = dream_tile.tile_image(base_img.clone(), params.tile_size, overlap_percent, True)
+
+        print('\nCreated ' + str(num_tiles) + ' tiles')
+        print('Tile pattern: ' + str(tile_pattern[0]) + 'x' + str(tile_pattern[1]))
+
+        octave_list = ocatve_calc((tile_height, tile_width), params.octave_scale, params.num_octaves, params.octave_mode)
+        print_octave_sizes(octave_list)
+        octave_losses, tile_losses = [], []
+        for iter in range(1, params.num_iterations+1):
+            for octave, octave_sizes in enumerate(octave_list, 1):
+                new_tiles = []
+                if not params.disable_roll:
+                    current_img, h_roll, w_roll = dream_utils.roll_tensor(current_img.clone())
+                img_tiles = dream_tile.tile_image(current_img, params.tile_size, overlap_percent)
+
+                for tile_num, tile_img in enumerate(img_tiles):
+                    maybe_print_tile(tile_num, num_tiles)
+                    net = copy.deepcopy(net_base) if not has_inception else net_base
+                    for param in net.parameters():
+                        param.requires_grad = False
+                    dream_losses, tv_losses, l2_losses = [], [], []
+                    if not has_inception:
+                        for i, layer in enumerate(net):
+                            if isinstance(layer, dream_loss_layers.TVLoss):
+                                tv_losses.append(layer)
+                            if isinstance(layer, dream_loss_layers.L2Regularizer):
+                                l2_losses.append(layer)
+                            if 'DreamLoss' in str(type(layer)):
+                                dream_losses.append(layer)
+                    elif has_inception:
+                        net, dream_losses, tv_losses, l2_losses = dream_model.renew_net(start_params, net, loss_module_list, lm_layer_names)
+
+                    tile_img = new_img(tile_img.clone(), octave_sizes)
+
+                    net(tile_img)
+                    for i in dream_losses:
+                        i.mode = 'loss'
+                    for i in dream_losses:
+                        i.mode = 'loss'
+
+                    # Maybe normalize dream weight
+                    if params.normalize_weights:
+                        normalize_weights(dream_losses)
+
+                    # Freeze the net_basework in order to prevent
+                    # unnecessary gradient calculations
+                    for param in net.parameters():
+                        param.requires_grad = False
+
+                    # Function to evaluate loss and gradient. We run the net_base forward and
+                    # backward to get the gradient, and sum up losses from the loss modules.
+                    # optim.lbfgs internally handles iteration and calls this function many
+                    # times, so we manually count the number of iterations to handle printing
+                    # and saving intermediate results.
+                    num_calls = [0]
+                    def feval():
+                        num_calls[0] += 1
+                        optimizer.zero_grad()
+                        net(tile_img)
+                        loss = 0
+
+                        for mod in dream_losses:
+                            loss += -mod.loss.to(backward_device)
+                        if params.tv_weight > 0:
+                            for mod in tv_losses:
+                                loss += mod.loss.to(backward_device)
+                        if params.l2_weight > 0:
+                            for mod in l2_losses:
+                                loss += mod.loss.to(backward_device)
+
+                        if params.clamp:
+                            tile_img.clamp(0, clamp_val)
+                        if params.adjust_contrast > -1:
+                            tile_img.data = dream_image.adjust_contrast(tile_img, r=clamp_val, p=params.adjust_contrast)
+
+                        total_loss[0] += loss.item()
+
+                        loss.backward()
+
+                        maybe_print_tile_iter(tile_num, num_tiles, num_calls[0], octave, params.octave_iter, dream_losses)
+
+                        return loss
+
+                    optimizer, loopVal = setup_optimizer(tile_img)
+                    while num_calls[0] <= params.octave_iter:
+                        optimizer.step(feval)
+
+                    for mod in dream_losses:
+                        tile_losses.append(mod.loss.item())
+
+                    if tile_img.size(2) != tile_height or tile_img.size(3) != tile_width:
+                        tile_img = dream_image.resize_tensor(tile_img.clone(), (tile_height, tile_width))
+                    new_tiles.append(tile_img)
+
+                current_img = dream_tile.rebuild_image(new_tiles, current_img, params.tile_size, overlap_percent)
+                if not params.disable_roll:
+                    current_img, _, _ = dream_utils.roll_tensor(current_img, -h_roll, -w_roll)
+
+                o_start, o_end = 0, len(img_tiles) - 1
                 for mod in dream_losses:
-                    loss += -mod.loss.to(backward_device)
-                if params.tv_weight > 0:
-                    for mod in tv_losses:
-                        loss += mod.loss.to(backward_device)
-                if params.l2_weight > 0:
-                    for mod in l2_losses:
-                        loss += mod.loss.to(backward_device)
+                     octave_losses.append(sum(tile_losses[o_start:o_end]))
+                     o_start += len(img_tiles) - 1
+                     o_end += len(img_tiles) - 1
 
-                if params.clamp:
-                     img.clamp(0, clamp_val)
-                if params.adjust_contrast > -1:
-                    img.data = dream_image.adjust_contrast(img, r=clamp_val, p=params.adjust_contrast)
+                for n, o_loss in enumerate(octave_losses):
+                     if octave == 1:
+                         total_dream_losses.append(o_loss)
+                     else:
+                         total_dream_losses[n] += o_loss
 
-                total_loss[0] += loss.item()
+                maybe_print_octave_tiled(octave, octave, len(octave_list), octave_losses)
+                maybe_save_octave(iter, octave, octave, tile_img, content_image, input_mean)
+                octave_losses, tile_losses = [], []
 
-                loss.backward()
+            maybe_print(iter, total_loss[0], total_dream_losses)
+            maybe_save(iter, current_img, content_image, input_mean, output_start_num)
+            total_dream_losses, total_loss = [], [0]
 
-                maybe_print_octave_iter(num_calls[0], octave, params.octave_iter, dream_losses)
-                maybe_save_octave(iter, num_calls[0], octave, img, content_image, input_mean)
-
-                return loss
-
-            optimizer, loopVal = setup_optimizer(img)
-            while num_calls[0] <= params.octave_iter:
-                optimizer.step(feval)
-
-            if octave == 1:
-                for mod in dream_losses:
-                    total_dream_losses.append(mod.loss.item())
-            else:
-                for d_loss, mod in enumerate(dream_losses):
-                    total_dream_losses[d_loss] += mod.loss.item()
-
-            if img.size(2) != h or img.size(3) != w:
-                current_img = dream_image.resize_tensor(img.clone(), (h,w))
-            else:
-                current_img = img.clone()
-
-        maybe_print(iter, total_loss[0], total_dream_losses)
-        maybe_save(iter, current_img, content_image, input_mean)
-        total_dream_losses, total_loss = [], [0]
-
-        if params.zoom > 0:
-           current_img = dream_image.zoom(current_img, params.zoom, params.zoom_mode)
-        if params.classify > 0:
-            feat = net_base(base_img.clone())
-            classify_img(feat)
+            if params.classify > 0:
+                if params.image_capture_size == 0:
+                    feat = net_base(current_img.clone())
+                else:
+                    feat = net_base(dream_image.resize_tensor(current_img.clone(), (image_capture_size)))
+                classify_img(feat)
+            if params.zoom > 0:
+                current_img = dream_image.zoom(current_img, params.zoom, params.zoom_mode)
 
 
 def save_output(t, save_img, content_image, iter_name, model_mean):
@@ -303,11 +455,11 @@ def save_output(t, save_img, content_image, iter_name, model_mean):
         dream_image.create_gif(output_filename, params.frame_duration)
 
 
-def maybe_save(t, save_img, content_image, input_mean):
+def maybe_save(t, save_img, content_image, input_mean, start_num):
     should_save = params.save_iter > 0 and t % params.save_iter == 0
     should_save = should_save or t == params.num_iterations
     if should_save:
-        save_output(t, save_img, content_image, "_" + str(t), input_mean)
+        save_output(t, save_img, content_image, "_" + str(t+start_num), input_mean)
 
 
 def maybe_save_octave(t, n, o, save_img, content_image, input_mean):
@@ -332,6 +484,25 @@ def maybe_print_octave_iter(t, n, total, dream_losses):
         print("Octave iter "+str(n) +" iteration " + str(t) + " / "+ str(total))
         for i, loss_module in enumerate(dream_losses):
             print("  DeepDream " + str(i+1) + " loss: " + str(loss_module.loss.item()))
+
+
+def maybe_print_octave_tiled(t, n, octaves, dream_losses):
+    if params.print_octave_iter > 0 and t % params.print_octave_iter == 0:
+        print("Octave "+str(n) + " / "+ str(octaves))
+        for i, loss_module in enumerate(dream_losses):
+            print("  DeepDream " + str(i+1) + " loss: " + str(loss_module))
+
+
+def maybe_print_tile_iter(tile, num_tiles, t, n, total, dream_losses):
+    if params.print_tile_iter > 0 and t % params.print_tile_iter == 0:
+        print("Tile " +str(tile+1) + " / " + str(num_tiles) + " iteration " + str(t) + " / "+ str(total))
+        for i, loss_module in enumerate(dream_losses):
+            print("  DeepDream " + str(i+1) + " loss: " + str(loss_module.loss.item()))
+
+
+def maybe_print_tile(tile_num, num_tiles):
+    if params.print_tile > 0 and (tile_num + 1) % params.print_tile == 0:
+        print('Processing tile: ' + str(tile_num+1) + ' of ' + str(num_tiles))
 
 
 def print_channels(dream_losses, layers, print_all_channels=False):

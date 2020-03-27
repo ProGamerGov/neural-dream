@@ -210,7 +210,7 @@ class ResNet_50_1by2_nsfw(nn.Module):
 
 
     def forward(self, input):
-        conv_1_pad      = self.conv_1_pad(x, (3, 3, 3, 3))
+        conv_1_pad      = self.conv_1_pad(input, (3, 3, 3, 3))
         conv_1          = self.conv_1(conv_1_pad)
         bn_1            = self.bn_1(conv_1)
         relu_1          = self.relu_1(bn_1)

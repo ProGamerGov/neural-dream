@@ -129,16 +129,17 @@ path or a full absolute path.
 * `-layer_sigma`: Apply gaussian blur to image. Default is set to `0` to disable the gaussian blur layer.
 * `-optimizer`: The optimization algorithm to use; either `lbfgs` or `adam`; default is `adam`.
   Adam tends to perform the best for DeepDream. L-BFGS tends to give worse results and it uses more memory; when using L-BFGS you will probably need to play with other parameters to get good results, especially the learning rate.
-* `-learning_rate`: Learning rate to use with the ADAM and L-BFGS optimizers. Default is `1.5`.
+* `-learning_rate`: Learning rate to use with the ADAM and L-BFGS optimizers. Default is `1.5`. On other DeepDream projects this parameter is commonly called 'step size'.
 * `-normalize_weights`: If this flag is present, dream weights will be divided by the number of channels for each layer. Idea from [PytorchNeuralStyleTransfer](https://github.com/leongatys/PytorchNeuralStyleTransfer).
 * `-loss_mode`: The DeepDream loss mode; `bce`, `mse`, `mean`, `norm`, or `l2`; default is `l2`.
 
 **Output options**:
 * `-output_image`: Name of the output image. Default is `out.png`.
+* `-output_start_num`: The number to start output image names at. Default is set to `1`.
 * `-print_iter`: Print progress every `print_iter` iterations. Set to `0` to disable printing.
-* `-print_octave_iter`: Print octave progress every `print_octave_iter` iterations. Default is set to `0` to disable printing.
+* `-print_octave_iter`: Print octave progress every `print_octave_iter` iterations. Default is set to `0` to disable printing. If tiling is enabled, then octave progress will be printed every `print_octave_iter` octaves.
 * `-save_iter`: Save the image every `save_iter` iterations. Set to `0` to disable saving intermediate results.
-* `-save_octave_iter`: Save the image every `save_octave_iter` iterations. Default is set to `0` to disable saving intermediate results.
+* `-save_octave_iter`: Save the image every `save_octave_iter` iterations. Default is set to `0` to disable saving intermediate results. If tiling is enabled, then octaves will be saved every `save_octave_iter` octaves.
 
 **Layer options**:
 * `-dream_layers`: Comma-separated list of layer names to use for DeepDream reconstruction.
@@ -148,29 +149,36 @@ path or a full absolute path.
 * `-channel_mode`: The DeepDream channel selection mode; `all`, `strong`, `avg`, `weak`, or `ignore`; default is `all`. The `strong` option will select the strongest channels, while `weak` will do the same with the weakest channels. The `avg` option will select the most average channels instead of the strongest or weakest. The number of channels selected by `strong`, `avg`, or `weak` is based on the first value for the `-channels` parameter. The `ignore` option will omit any specified channels.
 * `-channel_capture`: How often to select channels based on activation strength; either `once` or `iter`; default is `once`. The `once` option will select channels once at the start, while the `iter` will select potentially new channels every iteration. This parameter only comes into play if `-channel_mode` is not set to `all`.
 
-**Octave Options:**
+**Octave options:**
 * `-num_octaves`: Number of octaves per iteration. Default is `4`.
 * `-octave_scale`: Value for resizing the image by. Default is `0.6`.
 * `-octave_iter`: Number of iterations per octave. Default is `50`. On other DeepDream projects this parameter is commonly called 'steps'.
 * `-octave_mode`: The octave size calculation mode; one of `normal` or `advanced`. Default is `normal`.
 
-**Laplacian Pyramid Options:**
+**Laplacian Pyramid options:**
 * `-lap_scale`: The number of layers in a layer's laplacian pyramid. Default is set to `0` to disable laplacian pyramids.
 * `-sigma`: The strength of gaussian blur to use in laplacian pyramids. Default is `1`. By default, unless a second sigma value is provided with a comma to separate it from the first, the high gaussian layers will use sigma `sigma` * `lap_scale`.
 
-**Zoom Options:**
+**Zoom options:**
 * `-zoom`: The amount to zoom in on the image.
 * `-zoom_mode`: Whether to read the zoom value as a percentage or pixel value; one of `percentage` or `pixel`. Default is `percentage`.
 
-**FFT Options:**
+**FFT options:**
 * `-use_fft`: Whether to enable Fast Fourier transform (FFT) decorrelation.
 * `-fft_block`: The size of your FFT frequency filtering block. Default is `25`.
 
-**GIF Options:**
+**Tiling options:**
+* `-tile_size`: The desired tile size to use. Default is set to `0` to disable tiling.
+* `-overlap_percent`: The percentage of overlap to use for the tiles. Default is `50`.
+* `-print_tile`: Print the current tile being processed every `print_tile` tiles without any other information. Default is set to `0` to disable printing.
+* `-print_tile_iter`: Print tile progress every `print_tile_iter` iterations. Default is set to `0` to disable printing.
+* `-image_capture_size`: The image size to use for the initial full image capture and optional `-classify` parameter. Default is set to `0` to disable it and `image_size` is used instead.
+
+**GIF options:**
 * `-create_gif`: Whether to create a GIF from the output images after all iterations have been completed.
 * `-frame_duration`: The duration for each GIF frame in milliseconds. Default is `100`.
 
-**Help Options:**
+**Help options:**
 * `-print_layers`: Pass this flag to print the names of all usable layers for the selected model.
 * `-print_channels`: Pass this flag to print all the selected channels.
 
