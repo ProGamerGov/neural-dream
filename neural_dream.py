@@ -68,10 +68,6 @@ parser.add_argument("-fft_block", type=int, default=25)
 parser.add_argument("-zoom", type=int, default=0)
 parser.add_argument("-zoom_mode", choices=['percent', 'pixel'], default='percent')
 
-# Gif options
-parser.add_argument("-create_gif", action='store_true')
-parser.add_argument("-frame_duration", type=int, default=100)
-
 # Tile options
 parser.add_argument("-tile_size", type=int, default=0)
 parser.add_argument("-overlap_percent", type=float, default=0.5)
@@ -79,6 +75,10 @@ parser.add_argument("-print_tile", type=int, default=0)
 parser.add_argument("-disable_roll", action='store_true')
 parser.add_argument("-print_tile_iter", type=int, default=0)
 parser.add_argument("-image_capture_size", help="Image size for initial capture, and classification", type=int, default=0)
+
+# Gif options
+parser.add_argument("-create_gif", action='store_true')
+parser.add_argument("-frame_duration", type=int, default=100)
 
 # Other options
 parser.add_argument("-original_colors", type=int, choices=[0, 1], default=0)
@@ -201,7 +201,7 @@ def main():
     for i in dream_losses:
         i.mode = 'None'
 
-    current_img = new_img(base_img, -1)
+    current_img = base_img.clone()
     h, w = current_img.size(2), current_img.size(3)
     total_dream_losses, total_loss = [], [0]
 
@@ -747,7 +747,7 @@ def channel_ids(l, channels):
 
 
 # Prepare input image
-def new_img(input_image, scale_factor, mode='bilinear'):
+def new_img(input_image, scale_factor=-1, mode='bilinear'):
     img = input_image.clone()
     if scale_factor != -1:
         img = dream_image.resize_tensor(img, scale_factor, mode)

@@ -124,7 +124,11 @@ def add_tiles(tiles, base_img, tile_coords, tile_size, overlap):
             mask_sides=''
             c_overlap = overlap.copy()
             if row == 0:
-                mask_sides += 'bottom'
+                if row == len(tile_coords[0]) - 2:
+                    mask_sides += 'bottom-special'
+                    c_overlap[1] = f_ovlp[0] # Change bottom overlap
+                else:
+                    mask_sides += 'bottom'
             elif row > 0 and row < len(tile_coords[0]) -2:
                 mask_sides += 'bottom,top'
             elif row == len(tile_coords[0]) - 2:
@@ -141,7 +145,11 @@ def add_tiles(tiles, base_img, tile_coords, tile_size, overlap):
                     mask_sides += 'top'
 
             if column == 0:
-                mask_sides += ',right'
+                if column == len(tile_coords[1]) -2:
+                    mask_sides += ',right-special'
+                    c_overlap[2] = f_ovlp[1] # Change right overlap
+                else:
+                    mask_sides += ',right'
             elif column > 0 and column < len(tile_coords[1]) -2:
                 mask_sides += ',right,left'
             elif column == len(tile_coords[1]) -2:
