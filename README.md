@@ -147,7 +147,7 @@ path or a full absolute path.
 **Channel options:**
 * `-channels`: Comma-separated list of channels to use for DeepDream. If `-channel_mode` is set to a value other than `all` or `ignore`, only the first value in the list will be used.
 * `-channel_mode`: The DeepDream channel selection mode; `all`, `strong`, `avg`, `weak`, or `ignore`; default is `all`. The `strong` option will select the strongest channels, while `weak` will do the same with the weakest channels. The `avg` option will select the most average channels instead of the strongest or weakest. The number of channels selected by `strong`, `avg`, or `weak` is based on the first value for the `-channels` parameter. The `ignore` option will omit any specified channels.
-* `-channel_capture`: How often to select channels based on activation strength; either `once` or `iter`; default is `once`. The `once` option will select channels once at the start, while the `iter` will select potentially new channels every iteration. This parameter only comes into play if `-channel_mode` is not set to `all` or `ignore`.
+* `-channel_capture`: How often to select channels based on activation strength; either `once` or `octave_iter`; default is `once`. The `once` option will select channels once at the start, while the `octave_iter` will select potentially new channels every octave iteration. This parameter only comes into play if `-channel_mode` is not set to `all` or `ignore`.
 
 **Octave options:**
 * `-num_octaves`: Number of octaves per iteration. Default is `4`.
