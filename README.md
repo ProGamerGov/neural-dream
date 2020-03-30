@@ -153,7 +153,7 @@ path or a full absolute path.
 * `-num_octaves`: Number of octaves per iteration. Default is `4`.
 * `-octave_scale`: Value for resizing the image by. Default is `0.6`.
 * `-octave_iter`: Number of iterations per octave. Default is `50`. On other DeepDream projects this parameter is commonly called 'steps'.
-* `-octave_mode`: The octave size calculation mode; one of `normal`, `advanced`, `manual_max`, `manual_min`, or `manual`. Default is `normal`. If set to `manual_min` or `manual_max`, give `-octave_scale` `num_octaves` - 1 image sizes in a comma separated list of minamum or maximum values to `-octave_scale`. If set to `manual`, give `-octave_scale` `num_octaves` - 1 comma separted image size pairs in the form of `<H>,<W>`.
+* `-octave_mode`: The octave size calculation mode; `normal`, `advanced`, `manual_max`, `manual_min`, or `manual`. Default is `normal`. If set to `manual_min` or `manual_max`, give `-octave_scale` `num_octaves` - 1 image sizes in a comma separated list of minamum or maximum values to `-octave_scale`. If set to `manual`, give `-octave_scale` `num_octaves` - 1 comma separted image size pairs in the form of `<H>,<W>`.
 
 **Laplacian Pyramid options:**
 * `-lap_scale`: The number of layers in a layer's laplacian pyramid. Default is set to `0` to disable laplacian pyramids.
