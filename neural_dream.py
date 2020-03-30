@@ -710,7 +710,7 @@ def ocatve_calc(image_size, octave_scale, num_octaves, mode='normal'):
             octave_list.append(new_size)
     elif mode == 'manual':
         assert len(octave_scale) % 2 == 0 and len(octave_scale) / 2 == num_octaves - 1, \
-           "octave image sizes must be in sets of 2 for the manual option"
+           "Octave image sizes must be in sets of 2, with a total of (num_octaves - 1) sets for the manual option."
         for o in range(num_octaves):
             octave_list.append((octave_scale[o], octave_scale[o+1]))
     if mode == 'manual' or mode == 'manual_max' or mode == 'manual_min':
