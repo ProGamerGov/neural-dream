@@ -231,8 +231,6 @@ def main():
                 net(img)
                 for i in dream_losses:
                     i.mode = 'loss'
-                for i in dream_losses:
-                    i.mode = 'loss'
 
                 # Maybe normalize dream weight
                 if params.normalize_weights:
@@ -344,8 +342,6 @@ def main():
                     tile_img = new_img(tile_img.clone(), octave_sizes)
 
                     net(tile_img)
-                    for i in dream_losses:
-                        i.mode = 'loss'
                     for i in dream_losses:
                         i.mode = 'loss'
 
