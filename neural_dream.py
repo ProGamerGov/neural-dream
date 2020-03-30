@@ -44,9 +44,9 @@ parser.add_argument("-output_start_num", type=int, default=1)
 
 # Octave options
 parser.add_argument("-num_octaves", type=int, default=2)
-parser.add_argument("-octave_scale", type=float, default=0.6)
+parser.add_argument("-octave_scale", default='0.6')
 parser.add_argument("-octave_iter", type=int, default=50)
-parser.add_argument("-octave_mode", choices=['advanced', 'normal'], default='normal')
+parser.add_argument("-octave_mode", choices=['advanced', 'normal', 'manual', 'manual_max', 'manual_min'], default='normal')
 
 # Channel options
 parser.add_argument("-channels", type=str, help="channels for DeepDream", default='-1')
@@ -672,22 +672,45 @@ def print_octave_sizes(octave_list):
 
 
 def ocatve_calc(image_size, octave_scale, num_octaves, mode='advanced'):
-   octave_list = []
-   h_size, w_size = image_size[0], image_size[1]
-   if mode == 'normal':
-       for o in range(1, num_octaves+1):
-           h_size *= octave_scale
-           w_size *= octave_scale
-           if o < num_octaves:
-               octave_list.append((int(h_size), int(w_size)))
-       octave_list.reverse()
-       octave_list.append((image_size[0], image_size[1]))
-   elif mode == 'advanced':
-       for o in range(1, num_octaves+1):
-           h_size = image_size[0] * (o * octave_scale)
-           w_size = image_size[1] * (o * octave_scale)
-           octave_list.append((int(h_size), int(w_size)))
-   return octave_list
+    octave_list = []
+    h_size, w_size = image_size[0], image_size[1]
+    if len(octave_scale.split(',')) == 1:
+        octave_scale = float(octave_scale)
+    else:
+        octave_scale = [int(o) for o in octave_scale.split(',')]
+    if mode == 'manual_max' or mode == 'manual_min':
+        assert len(octave_scale) + 1 == num_octaves, \
+           "the number of octave image sizes must be equal to (num_octaves - 1) "   
+ 	   
+    if mode == 'normal':
+        for o in range(1, num_octaves+1):
+            h_size *= octave_scale
+            w_size *= octave_scale
+            if o < num_octaves:
+                octave_list.append((int(h_size), int(w_size)))
+        octave_list.reverse()
+        octave_list.append((image_size[0], image_size[1]))
+    elif mode == 'advanced':
+        for o in range(1, num_octaves+1):
+            h_size = image_size[0] * (o * octave_scale)
+            w_size = image_size[1] * (o * octave_scale)
+            octave_list.append((int(h_size), int(w_size)))
+    elif mode == 'manual_max':
+        for o in octave_scale:
+            new_size = tuple([int((float(o) / max(image_size))*x) for x in (h_size, w_size)])
+            octave_list.append(new_size)
+    elif mode == 'manual_min':
+        for o in octave_scale:
+            new_size = tuple([int((float(o) / min(image_size))*x) for x in (h_size, w_size)])
+            octave_list.append(new_size)
+    elif mode == 'manual':
+        assert len(octave_scale) % 2 == 0 and len(octave_scale) / 2 == num_octaves - 1, \
+           "octave image sizes must be in sets of 2 for the manual option"
+        for o in range(num_octaves):
+            octave_list.append((octave_scale[o], octave_scale[o+1]))
+    if mode == 'manual' or mode == 'manual_max' or mode == 'manual_min':
+        octave_list.append(image_size)
+    return octave_list
 
 
 # Divide weights by channel size
