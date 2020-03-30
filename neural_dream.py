@@ -46,7 +46,7 @@ parser.add_argument("-output_start_num", type=int, default=1)
 parser.add_argument("-num_octaves", type=int, default=2)
 parser.add_argument("-octave_scale", default='0.6')
 parser.add_argument("-octave_iter", type=int, default=50)
-parser.add_argument("-octave_mode", choices=['advanced', 'normal', 'manual', 'manual_max', 'manual_min'], default='normal')
+parser.add_argument("-octave_mode", choices=['normal', 'advanced', 'manual', 'manual_max', 'manual_min'], default='normal')
 
 # Channel options
 parser.add_argument("-channels", type=str, help="channels for DeepDream", default='-1')
@@ -671,16 +671,21 @@ def print_octave_sizes(octave_list):
     print()
 
 
-def ocatve_calc(image_size, octave_scale, num_octaves, mode='advanced'):
+# Determine octave image sizes
+def ocatve_calc(image_size, octave_scale, num_octaves, mode='normal'):
     octave_list = []
     h_size, w_size = image_size[0], image_size[1]
     if len(octave_scale.split(',')) == 1:
         octave_scale = float(octave_scale)
     else:
         octave_scale = [int(o) for o in octave_scale.split(',')]
+    if mode == 'normal' or mode == 'advanced':
+        assert octave_scale is not list, \
+            "'-octave_mode normal' and '-octave_mode advanced' require a single float value."	
     if mode == 'manual_max' or mode == 'manual_min':
         assert len(octave_scale) + 1 == num_octaves, \
-           "the number of octave image sizes must be equal to (num_octaves - 1) "   
+            "The number of octave image sizes must be equal to (num_octaves - 1)" \
+	    + " for '-octave_mode manual_min' or '-octave_mode manual_max'"
  	   
     if mode == 'normal':
         for o in range(1, num_octaves+1):
