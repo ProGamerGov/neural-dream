@@ -95,6 +95,7 @@ parser.add_argument("-clamp", action='store_true')
 parser.add_argument("-random_transforms", choices=['none', 'all', 'flip', 'rotate'], default='none')
 parser.add_argument("-adjust_contrast", type=float, help="try 99.98", default=-1)
 parser.add_argument("-classify", type=int, default=0)
+parser.add_argument("-capture_mode", choices=['initial', 'iter', 'none', 'initial,iter', 'iter,initial'], default='none')
 
 parser.add_argument("-dream_layers", help="layers for DeepDream", default='inception_4d_3x3_reduce')
 
@@ -180,14 +181,17 @@ def main():
     for param in net_base.parameters():
         param.requires_grad = False
 
+    if 'initial' in params.capture_mode or params.channels != '-1' or params.channel_mode != 'all' and params.channels != '-1' or params.classify > 0:
+        for i in dream_losses:
+            i.mode = 'capture'
+	if params.image_capture_size == 0:
+            net_base(base_img.clone())
+        else:
+            image_capture_size = tuple([int((float(params.image_capture_size) / max(base_img.size()))*x) for x in (base_img.size(2), base_img.size(3))])
+            net_base(dream_image.resize_tensor(base_img.clone(), (image_capture_size)))
+		
     for i in dream_losses:
-        i.mode = 'capture'
-
-    if params.image_capture_size == 0:
-        net_base(base_img.clone())
-    else:
-        image_capture_size = tuple([int((float(params.image_capture_size) / max(base_img.size()))*x) for x in (base_img.size(2), base_img.size(3))])
-        net_base(dream_image.resize_tensor(base_img.clone(), (image_capture_size)))
+        i.mode = 'None'
 
     if params.channels != '-1' or params.channel_mode != 'all' and params.channels != '-1':
         print_channels(dream_losses, dream_layers, params.print_channels)
@@ -197,9 +201,6 @@ def main():
        else:
            feat = net_base(dream_image.resize_tensor(base_img.clone(), (image_capture_size)))
        classify_img(feat)
-
-    for i in dream_losses:
-        i.mode = 'None'
 
     current_img = base_img.clone()
     h, w = current_img.size(2), current_img.size(3)
