@@ -147,13 +147,13 @@ path or a full absolute path.
 **Channel options:**
 * `-channels`: Comma-separated list of channels to use for DeepDream. If `-channel_mode` is set to a value other than `all` or `ignore`, only the first value in the list will be used.
 * `-channel_mode`: The DeepDream channel selection mode; `all`, `strong`, `avg`, `weak`, or `ignore`; default is `all`. The `strong` option will select the strongest channels, while `weak` will do the same with the weakest channels. The `avg` option will select the most average channels instead of the strongest or weakest. The number of channels selected by `strong`, `avg`, or `weak` is based on the first value for the `-channels` parameter. The `ignore` option will omit any specified channels.
-* `-channel_capture`: How often to select channels based on activation strength; either `once` or `iter`; default is `once`. The `once` option will select channels once at the start, while the `iter` will select potentially new channels every iteration. This parameter only comes into play if `-channel_mode` is not set to `all` or `ignore`.
+* `-channel_capture`: How often to select channels based on activation strength; either `once` or `octave_iter`; default is `once`. The `once` option will select channels once at the start, while the `octave_iter` will select potentially new channels every octave iteration. This parameter only comes into play if `-channel_mode` is not set to `all` or `ignore`.
 
 **Octave options:**
 * `-num_octaves`: Number of octaves per iteration. Default is `4`.
 * `-octave_scale`: Value for resizing the image by. Default is `0.6`.
 * `-octave_iter`: Number of iterations per octave. Default is `50`. On other DeepDream projects this parameter is commonly called 'steps'.
-* `-octave_mode`: The octave size calculation mode; one of `normal` or `advanced`. Default is `normal`.
+* `-octave_mode`: The octave size calculation mode; `normal`, `advanced`, `manual_max`, `manual_min`, or `manual`. Default is `normal`. If set to `manual_max` or `manual_min`, then `-octave_scale` takes a comma separated list of image sizes for the largest or smallest image dimension for `num_octaves` minus 1 octaves. If set `manual` then `-octave_scale` takes a comma separated list of image size pairs for  `num_octaves` minus 1 octaves, in the form of `<Height>,<Width>`.
 
 **Laplacian Pyramid options:**
 * `-lap_scale`: The number of layers in a layer's laplacian pyramid. Default is set to `0` to disable laplacian pyramids.

@@ -85,16 +85,16 @@ def mask_tile(tile, overlap, side='bottom'):
 
 
 def get_tile_coords(d, tile_dim, overlap=0):
-    overlap = int(tile_dim * (1-overlap))
+    move = int(tile_dim * (1-overlap))
     c, tile_start, coords = 1, 0, [0]
     while tile_start + tile_dim < d:
-        tile_start = overlap * c
+        tile_start = move * c
         if tile_start + tile_dim >= d:
             coords.append(d - tile_dim)
         else:
             coords.append(tile_start)
         c += 1
-    return coords, overlap
+    return coords
 
 
 def get_tiles(img, tile_coords, tile_size, info_only=False):
@@ -180,8 +180,9 @@ def tile_setup(tile_size, overlap_percent, base_size):
         tile_size = (tile_size, tile_size)
     if type(overlap_percent) is not tuple and type(overlap_percent) is not list:
         overlap_percent = (overlap_percent, overlap_percent)
-    x_coords, x_ovlp = get_tile_coords(base_size[1], tile_size[1], overlap_percent[1])
-    y_coords, y_ovlp = get_tile_coords(base_size[0], tile_size[0], overlap_percent[0])
+    x_coords = get_tile_coords(base_size[1], tile_size[1], overlap_percent[1])
+    y_coords = get_tile_coords(base_size[0], tile_size[0], overlap_percent[0])
+    y_ovlp, x_ovlp = int(tile_size[0] * overlap_percent[0]), int(tile_size[1] * overlap_percent[1])
     return (y_coords, x_coords), tile_size, [y_ovlp, y_ovlp, x_ovlp, x_ovlp]
 
 

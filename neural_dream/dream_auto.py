@@ -6,7 +6,7 @@ def model_name_list():
     'vgg16_hybrid1365.pth', 'fcn32s-heavy-pascal.pth', 'nyud-fcn32s-color-heavy.pth', \
     'pascalcontext-fcn32s-heavy.pth', 'siftflow-fcn32s-heavy.pth', 'channel_pruning.pth', \
     'googlenet_places205.pth', 'googlenet_places365.pth', 'resnet_50_1by2_nsfw.pth', \
-    'bvlc_googlenet.pth', 'googlenet_finetune_web_cars.pth', 'googlenet_sos.pth']
+    'bvlc_googlenet.pth', 'googlenet_finetune_web_cars.pth', 'googlenet_sos.pth', 'inception5h']
     return pytorch_names, caffe_names
 
 # Automatically determine model type

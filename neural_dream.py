@@ -44,9 +44,9 @@ parser.add_argument("-output_start_num", type=int, default=1)
 
 # Octave options
 parser.add_argument("-num_octaves", type=int, default=2)
-parser.add_argument("-octave_scale", type=float, default=0.6)
+parser.add_argument("-octave_scale", default='0.6')
 parser.add_argument("-octave_iter", type=int, default=50)
-parser.add_argument("-octave_mode", choices=['advanced', 'normal'], default='normal')
+parser.add_argument("-octave_mode", choices=['normal', 'advanced', 'manual_max', 'manual_min', 'manual'], default='normal')
 
 # Channel options
 parser.add_argument("-channels", type=str, help="channels for DeepDream", default='-1')
@@ -206,7 +206,7 @@ def main():
     total_dream_losses, total_loss = [], [0]
 
     if params.tile_size == 0:
-        octave_list = ocatve_calc((h,w), params.octave_scale, params.num_octaves, params.octave_mode)
+        octave_list = octave_calc((h,w), params.octave_scale, params.num_octaves, params.octave_mode)
         print_octave_sizes(octave_list)
 
         for iter in range(1, params.num_iterations+1):
@@ -229,8 +229,6 @@ def main():
                 img = new_img(current_img.clone(), octave_sizes)
 
                 net(img)
-                for i in dream_losses:
-                    i.mode = 'loss'
                 for i in dream_losses:
                     i.mode = 'loss'
 
@@ -314,7 +312,7 @@ def main():
         print('\nCreated ' + str(num_tiles) + ' tiles')
         print('Tile pattern: ' + str(tile_pattern[0]) + 'x' + str(tile_pattern[1]))
 
-        octave_list = ocatve_calc((tile_height, tile_width), params.octave_scale, params.num_octaves, params.octave_mode)
+        octave_list = octave_calc((tile_height, tile_width), params.octave_scale, params.num_octaves, params.octave_mode)
         print_octave_sizes(octave_list)
         octave_losses, tile_losses = [], []
         for iter in range(1, params.num_iterations+1):
@@ -344,8 +342,6 @@ def main():
                     tile_img = new_img(tile_img.clone(), octave_sizes)
 
                     net(tile_img)
-                    for i in dream_losses:
-                        i.mode = 'loss'
                     for i in dream_losses:
                         i.mode = 'loss'
 
@@ -671,23 +667,57 @@ def print_octave_sizes(octave_list):
     print()
 
 
-def ocatve_calc(image_size, octave_scale, num_octaves, mode='advanced'):
-   octave_list = []
-   h_size, w_size = image_size[0], image_size[1]
-   if mode == 'normal':
-       for o in range(1, num_octaves+1):
-           h_size *= octave_scale
-           w_size *= octave_scale
-           if o < num_octaves:
-               octave_list.append((int(h_size), int(w_size)))
-       octave_list.reverse()
-       octave_list.append((image_size[0], image_size[1]))
-   elif mode == 'advanced':
-       for o in range(1, num_octaves+1):
-           h_size = image_size[0] * (o * octave_scale)
-           w_size = image_size[1] * (o * octave_scale)
-           octave_list.append((int(h_size), int(w_size)))
-   return octave_list
+# Determine octave image sizes
+def octave_calc(image_size, octave_scale, num_octaves, mode='normal'):
+    octave_list = []
+    h_size, w_size = image_size[0], image_size[1]
+    if len(octave_scale.split(',')) == 1 and 'manual' not in mode:
+        octave_scale = float(octave_scale)
+    else:
+        octave_scale = [int(o) for o in octave_scale.split(',')]
+        if mode == 'manual':
+            octave_scale = [octave_scale[o:o+2] for o in range(0, len(octave_scale), 2)]
+    if mode == 'normal' or mode == 'advanced':
+        assert octave_scale is not list, \
+            "'-octave_mode normal' and '-octave_mode advanced' require a single float value."
+    if mode == 'manual_max' or mode == 'manual_min':
+        if type(octave_scale) is not list:
+            octave_scale = [octave_scale]
+        assert len(octave_scale) + 1 == num_octaves, \
+            "Exected " + str(num_octaves - 1) + " octave sizes, but got " + str(len(octave_scale)) + " containing: " + str(octave_scale)
+
+    if mode == 'normal':
+        for o in range(1, num_octaves+1):
+            h_size *= octave_scale
+            w_size *= octave_scale
+            if o < num_octaves:
+                octave_list.append((int(h_size), int(w_size)))
+        octave_list.reverse()
+        octave_list.append((image_size[0], image_size[1]))
+    elif mode == 'advanced':
+        for o in range(1, num_octaves+1):
+            h_size = image_size[0] * (o * octave_scale)
+            w_size = image_size[1] * (o * octave_scale)
+            octave_list.append((int(h_size), int(w_size)))
+    elif mode == 'manual_max':
+        for o in octave_scale:
+            new_size = tuple([int((float(o) / max(image_size))*x) for x in (h_size, w_size)])
+            octave_list.append(new_size)
+    elif mode == 'manual_min':
+        for o in octave_scale:
+            new_size = tuple([int((float(o) / min(image_size))*x) for x in (h_size, w_size)])
+            octave_list.append(new_size)
+    elif mode == 'manual':
+        for o_size in octave_scale:
+            assert len(o_size) % 2 == 0, "Manual octave sizes must be in pairs like: Height,Width,Height,Width..."
+        assert len(octave_scale) == num_octaves - 1, \
+            "Exected " + str(num_octaves - 1) + " octave size pairs, but got " + str(len(octave_scale)) + " pairs containing: " \
+	    + str(octave_scale)
+        for size_pair in octave_scale:
+            octave_list.append((size_pair[0], size_pair[1]))
+    if mode == 'manual' or mode == 'manual_max' or mode == 'manual_min':
+        octave_list.append(image_size)
+    return octave_list
 
 
 # Divide weights by channel size
