@@ -84,7 +84,7 @@ parser.add_argument("-frame_duration", type=int, default=100)
 parser.add_argument("-original_colors", type=int, choices=[0, 1], default=0)
 parser.add_argument("-pooling", choices=['avg', 'max'], default='max')
 parser.add_argument("-model_file", type=str, default='models/bvlc_googlenet.pth')
-parser.add_argument("-model_type", choices=['caffe', 'pytorch', 'auto'], default='auto')
+parser.add_argument("-model_type", choices=['caffe', 'pytorch', 'keras', 'auto'], default='auto')
 parser.add_argument("-model_mean", default='auto')
 parser.add_argument("-label_file", type=str, default='')
 parser.add_argument("-disable_check", action='store_true')
@@ -146,11 +146,11 @@ def main():
     primary_params = (params.loss_mode, params.dream_weight, params.channels, params.channel_mode)
     secondary_params = {'channel_capture': params.channel_capture, 'scale': params.lap_scale, 'sigma': params.sigma, \
     'use_fft': (params.use_fft, params.fft_block), 'r': clamp_val, 'p_mode': params.percent_mode, 'norm_p': params.norm_percent, \
-	'abs_p': params.abs_percent, 'mean_p': params.mean_percent}
+    'abs_p': params.abs_percent, 'mean_p': params.mean_percent}
 
     # Set up the network, inserting dream loss modules
     net_base, dream_losses, tv_losses, l2_losses, lm_layer_names, loss_module_list = dream_model.build_net(cnn, dream_layers, \
-	has_inception, layerList, params.classify, start_params, primary_params, secondary_params)
+    has_inception, layerList, params.classify, start_params, primary_params, secondary_params)
 
     if params.classify > 0:
        classify_img = dream_utils.Classify(labels, params.classify)
@@ -597,6 +597,8 @@ def preprocess(image_name, image_size, mode='caffe', input_mean=[103.939, 116.77
     elif mode == 'pytorch':
         Normalize = transforms.Compose([transforms.Normalize(mean=input_mean, std=[1,1,1])])
         tensor = Normalize(Loader(image)).unsqueeze(0)
+    elif mode == 'keras':
+        tensor = ((Loader(image) - 0.5) * 2.0).unsqueeze(0)
     return tensor
 
 
@@ -610,6 +612,8 @@ def deprocess(output_tensor, mode='caffe', input_mean=[-103.939, -116.779, -123.
     elif mode == 'pytorch':
         Normalize = transforms.Compose([transforms.Normalize(mean=input_mean, std=[1,1,1])])
         output_tensor = Normalize(output_tensor.squeeze(0).cpu())
+    elif mode == 'keras':
+        output_tensor = ((output_tensor + 1.0) / 2.0).squeeze(0).cpu()
     output_tensor.clamp_(0, 1)
     Image2PIL = transforms.ToPILImage()
     image = Image2PIL(output_tensor.cpu())
@@ -712,7 +716,7 @@ def octave_calc(image_size, octave_scale, num_octaves, mode='normal'):
             assert len(o_size) % 2 == 0, "Manual octave sizes must be in pairs like: Height,Width,Height,Width..."
         assert len(octave_scale) == num_octaves - 1, \
             "Exected " + str(num_octaves - 1) + " octave size pairs, but got " + str(len(octave_scale)) + " pairs containing: " \
-	    + str(octave_scale)
+            + str(octave_scale)
         for size_pair in octave_scale:
             octave_list.append((size_pair[0], size_pair[1]))
     if mode == 'manual' or mode == 'manual_max' or mode == 'manual_min':

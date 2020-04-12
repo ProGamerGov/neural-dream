@@ -185,7 +185,7 @@ path or a full absolute path.
 **Other options**:
 * `-original_colors`: If you set this to `1`, then the output image will keep the colors of the content image.
 * `-model_file`: Path to the `.pth` file for the VGG Caffe model. Default is the original VGG-19 model; you can also try the original VGG-16 model.
-* `-model_type`: Whether the model was trained using Caffe or PyTorch preprocessing; `caffe`, `pytorch`, or `auto`; default is `auto`.
+* `-model_type`: Whether the model was trained using Caffe, PyTorch, or Keras preprocessing; `caffe`, `pytorch`, `keras`, or `auto`; default is `auto`.
 * `-model_mean`: A comma separated list of 3 numbers for the model's mean; default is `auto`.
 * `-pooling`: The type of pooling layers to use for VGG and NIN models; one of `max` or `avg`. Default is `max`. VGG models seem to create better results with average pooling.
 * `-seed`: An integer value that you can specify for repeatable results. By default this value is random for each run.

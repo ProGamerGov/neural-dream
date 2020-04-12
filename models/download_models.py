@@ -12,13 +12,13 @@ else:
 
 
 options_list = ['all', 'caffe-vgg16', 'caffe-vgg19', 'caffe-nin', 'caffe-googlenet-places205', 'caffe-googlenet-places365', 'caffe-googlenet-bvlc', 'caffe-googlenet-cars', 'caffe-googlenet-sos', \
-                'caffe-resnet-opennsfw', 'pytorch-vgg16', 'pytorch-vgg19', 'pytorch-googlenet', 'pytorch-inceptionv3', 'tensorflow-inception5h', 'all-caffe', 'all-caffe-googlenet']
+                'caffe-resnet-opennsfw', 'pytorch-vgg16', 'pytorch-vgg19', 'pytorch-googlenet', 'pytorch-inceptionv3', 'tensorflow-inception5h', 'keras-inceptionv3', 'all-caffe', 'all-caffe-googlenet']
 
 
 def main():
     params = params_list()
     if params.models == 'all':
-        params.models = options_list[1:15]
+        params.models = options_list[1:16]
     elif 'all-caffe' in params.models and 'all-caffe-googlenet' not in params.models:
         params.models = options_list[1:10] + params.models.split(',')
     elif 'all-caffe-googlenet' in params.models:
@@ -112,14 +112,21 @@ def main():
         name = "inception_v3_google-1a9a5a14.pth"
         download_file(fileurl, name, params.download_path)
 
-    if 'tensorflow-inception5h'  in params.models:
+    if 'tensorflow-inception5h' in params.models:
         # Download the Inception5h model
-        print("Downloading the Tensorflow Inception5h model")
+        print("Downloading the TensorFlow Inception5h model")
         fileurl = "https://github.com/ProGamerGov/pytorch-old-tensorflow-models/raw/master/inception5h.pth"
         name = "inception5h.pth"
         download_file(fileurl, name, params.download_path)
 
-    if 'caffe-resnet-opennsfw'  in params.models:
+    if 'keras-inceptionv3' in params.models:
+        # Download the Keras Inception V3 model
+        print("Downloading the Keras Inception V3 model")
+        fileurl = "https://github.com/ProGamerGov/pytorch-old-tensorflow-models/raw/master/inceptionv3_keras.pth"
+        name = "inceptionv3_keras.pth"
+        download_file(fileurl, name, params.download_path)
+
+    if 'caffe-resnet-opennsfw' in params.models:
         # Download the ResNet Yahoo Open NSFW model
         print("Downloading the ResNet Yahoo Open NSFW model")
         fileurl = "https://github.com/ProGamerGov/pytorch-old-caffemodels/raw/master/ResNet_50_1by2_nsfw.pth"
