@@ -46,9 +46,9 @@ parser.add_argument("-output_start_num", type=int, default=1)
 
 # Octave options
 parser.add_argument("-num_octaves", type=int, default=2)
-parser.add_argument("-octave_scale", type=float, default=0.6)
+parser.add_argument("-octave_scale", type=float, default='0.6')
 parser.add_argument("-octave_iter", type=int, default=50)
-parser.add_argument("-octave_mode", choices=['advanced', 'normal'], default='normal')
+parser.add_argument("-octave_mode", choices=['normal', 'advanced', 'manual_max', 'manual_min', 'manual'], default='normal')
 
 # Channel options
 parser.add_argument("-channels", type=str, help="channels for DeepDream", default='-1')
@@ -86,7 +86,7 @@ parser.add_argument("-frame_duration", type=int, default=100)
 parser.add_argument("-original_colors", type=int, choices=[0, 1], default=0)
 parser.add_argument("-pooling", choices=['avg', 'max'], default='max')
 parser.add_argument("-model_file", type=str, help="Ex: path/to/model | 'bvlc_googlenet.pth', 'googlenet_places365.pth', 'nin_imagenet.pth'", default='')
-parser.add_argument("-model_type", choices=['caffe', 'pytorch', 'auto'], default='auto')
+parser.add_argument("-model_type", choices=['caffe', 'pytorch', 'keras', 'auto'], default='auto')
 parser.add_argument("-model_mean", default='auto')
 parser.add_argument("-label_file", type=str, default='')
 parser.add_argument("-disable_check", action='store_true')
@@ -161,11 +161,11 @@ def main():
     primary_params = (params.loss_mode, params.dream_weight, params.channels, params.channel_mode)
     secondary_params = {'channel_capture': params.channel_capture, 'scale': params.lap_scale, 'sigma': params.sigma, \
     'use_fft': (params.use_fft, params.fft_block), 'r': clamp_val, 'p_mode': params.percent_mode, 'norm_p': params.norm_percent, \
-	'abs_p': params.abs_percent, 'mean_p': params.mean_percent}
+    'abs_p': params.abs_percent, 'mean_p': params.mean_percent}
 
     # Set up the network, inserting dream loss modules
     net_base, dream_losses, tv_losses, l2_losses, lm_layer_names, loss_module_list = dream_model.build_net(cnn, dream_layers, \
-	has_inception, layerList, params.classify, start_params, primary_params, secondary_params)
+    has_inception, layerList, params.classify, start_params, primary_params, secondary_params)
 
     if params.classify > 0:
        classify_img = dream_utils.Classify(labels, params.classify)
@@ -221,7 +221,7 @@ def main():
     total_dream_losses, total_loss = [], [0]
 
     if params.tile_size == 0:
-        octave_list = ocatve_calc((h,w), params.octave_scale, params.num_octaves, params.octave_mode)
+        octave_list = octave_calc((h,w), params.octave_scale, params.num_octaves, params.octave_mode)
         print_octave_sizes(octave_list)
 
         for iter in range(1, params.num_iterations+1):
@@ -244,8 +244,6 @@ def main():
                 img = new_img(current_img.clone(), octave_sizes)
 
                 net(img)
-                for i in dream_losses:
-                    i.mode = 'loss'
                 for i in dream_losses:
                     i.mode = 'loss'
 
@@ -329,7 +327,7 @@ def main():
         print('\nCreated ' + str(num_tiles) + ' tiles')
         print('Tile pattern: ' + str(tile_pattern[0]) + 'x' + str(tile_pattern[1]))
 
-        octave_list = ocatve_calc((tile_height, tile_width), params.octave_scale, params.num_octaves, params.octave_mode)
+        octave_list = octave_calc((tile_height, tile_width), params.octave_scale, params.num_octaves, params.octave_mode)
         print_octave_sizes(octave_list)
         octave_losses, tile_losses = [], []
         for iter in range(1, params.num_iterations+1):
@@ -359,8 +357,6 @@ def main():
                     tile_img = new_img(tile_img.clone(), octave_sizes)
 
                     net(tile_img)
-                    for i in dream_losses:
-                        i.mode = 'loss'
                     for i in dream_losses:
                         i.mode = 'loss'
 
@@ -617,6 +613,8 @@ def preprocess(image_name, image_size, mode='caffe', input_mean=[103.939, 116.77
     elif mode == 'pytorch':
         Normalize = transforms.Compose([transforms.Normalize(mean=input_mean, std=[1,1,1])])
         tensor = Normalize(Loader(image)).unsqueeze(0)
+    elif mode == 'keras':
+        tensor = ((Loader(image) - 0.5) * 2.0).unsqueeze(0)
     return tensor
 
 
@@ -629,7 +627,9 @@ def deprocess(output_tensor, mode='caffe', input_mean=[-103.939, -116.779, -123.
         output_tensor = bgr2rgb(Normalize(output_tensor.squeeze(0).cpu())) / 256
     elif mode == 'pytorch':
         Normalize = transforms.Compose([transforms.Normalize(mean=input_mean, std=[1,1,1])])
-        output_tensor = Normalize(output_tensor.squeeze(0).cpu())
+        output_tensor = Normalize(output_tensor.squeeze(0).cpu
+    elif mode == 'keras':
+        output_tensor = ((output_tensor + 1.0) / 2.0).squeeze(0).cpu()
     output_tensor.clamp_(0, 1)
     Image2PIL = transforms.ToPILImage()
     image = Image2PIL(output_tensor.cpu())
@@ -687,23 +687,57 @@ def print_octave_sizes(octave_list):
     print()
 
 
-def ocatve_calc(image_size, octave_scale, num_octaves, mode='advanced'):
-   octave_list = []
-   h_size, w_size = image_size[0], image_size[1]
-   if mode == 'normal':
-       for o in range(1, num_octaves+1):
-           h_size *= octave_scale
-           w_size *= octave_scale
-           if o < num_octaves:
-               octave_list.append((int(h_size), int(w_size)))
-       octave_list.reverse()
-       octave_list.append((image_size[0], image_size[1]))
-   elif mode == 'advanced':
-       for o in range(1, num_octaves+1):
-           h_size = image_size[0] * (o * octave_scale)
-           w_size = image_size[1] * (o * octave_scale)
-           octave_list.append((int(h_size), int(w_size)))
-   return octave_list
+# Determine octave image sizes
+def octave_calc(image_size, octave_scale, num_octaves, mode='normal'):
+    octave_list = []
+    h_size, w_size = image_size[0], image_size[1]
+    if len(octave_scale.split(',')) == 1 and 'manual' not in mode:
+        octave_scale = float(octave_scale)
+    else:
+        octave_scale = [int(o) for o in octave_scale.split(',')]
+        if mode == 'manual':
+            octave_scale = [octave_scale[o:o+2] for o in range(0, len(octave_scale), 2)]
+    if mode == 'normal' or mode == 'advanced':
+        assert octave_scale is not list, \
+            "'-octave_mode normal' and '-octave_mode advanced' require a single float value."
+    if mode == 'manual_max' or mode == 'manual_min':
+        if type(octave_scale) is not list:
+            octave_scale = [octave_scale]
+        assert len(octave_scale) + 1 == num_octaves, \
+            "Exected " + str(num_octaves - 1) + " octave sizes, but got " + str(len(octave_scale)) + " containing: " + str(octave_scale)
+
+    if mode == 'normal':
+        for o in range(1, num_octaves+1):
+            h_size *= octave_scale
+            w_size *= octave_scale
+            if o < num_octaves:
+                octave_list.append((int(h_size), int(w_size)))
+        octave_list.reverse()
+        octave_list.append((image_size[0], image_size[1]))
+    elif mode == 'advanced':
+        for o in range(1, num_octaves+1):
+            h_size = image_size[0] * (o * octave_scale)
+            w_size = image_size[1] * (o * octave_scale)
+            octave_list.append((int(h_size), int(w_size)))
+    elif mode == 'manual_max':
+        for o in octave_scale:
+            new_size = tuple([int((float(o) / max(image_size))*x) for x in (h_size, w_size)])
+            octave_list.append(new_size)
+    elif mode == 'manual_min':
+        for o in octave_scale:
+            new_size = tuple([int((float(o) / min(image_size))*x) for x in (h_size, w_size)])
+            octave_list.append(new_size)
+    elif mode == 'manual':
+        for o_size in octave_scale:
+            assert len(o_size) % 2 == 0, "Manual octave sizes must be in pairs like: Height,Width,Height,Width..."
+        assert len(octave_scale) == num_octaves - 1, \
+            "Exected " + str(num_octaves - 1) + " octave size pairs, but got " + str(len(octave_scale)) + " pairs containing: " \
+            + str(octave_scale)
+        for size_pair in octave_scale:
+            octave_list.append((size_pair[0], size_pair[1]))
+    if mode == 'manual' or mode == 'manual_max' or mode == 'manual_min':
+        octave_list.append(image_size)
+    return octave_list
 
 
 # Divide weights by channel size
@@ -795,14 +829,14 @@ def download_models(models, download_path):
         download_path = os.path.expanduser("~")	
 	
     options_list = ['all', 'caffe-vgg16', 'caffe-vgg19', 'caffe-nin', 'caffe-googlenet-places205', 'caffe-googlenet-places365', 'caffe-googlenet-bvlc', 'caffe-googlenet-cars', 'caffe-googlenet-sos', \
-                    'caffe-resnet-opennsfw', 'pytorch-vgg16', 'pytorch-vgg19', 'pytorch-googlenet', 'pytorch-inceptionv3', 'tensorflow-inception5h', 'all-caffe', 'all-caffe-googlenet']
+                    'caffe-resnet-opennsfw', 'pytorch-vgg16', 'pytorch-vgg19', 'pytorch-googlenet', 'pytorch-inceptionv3', 'tensorflow-inception5h', 'keras-inceptionv3', 'all-caffe', 'all-caffe-googlenet']
 
     if 'print-all' in models:
         print(options_list)
         quit()
 		
     if models == 'all':
-        models = options_list[1:15]
+        models = options_list[1:16]
     elif 'all-caffe' in models and 'all-caffe-googlenet' not in models: 
         models = options_list[1:10] + models.split(',')
     elif 'all-caffe-googlenet' in models:
@@ -810,105 +844,112 @@ def download_models(models, download_path):
     else:
         models = models.split(',')
 
-    if 'caffe-vgg19' in models:
+    if 'caffe-vgg19' in params.models:
         # Download the VGG-19 ILSVRC model and fix the layer names
         print("Downloading the VGG-19 ILSVRC model")
         sd = load_url("https://web.eecs.umich.edu/~justincj/models/vgg19-d01eb7cb.pth")
         map = {'classifier.1.weight':u'classifier.0.weight', 'classifier.1.bias':u'classifier.0.bias', 'classifier.4.weight':u'classifier.3.weight', 'classifier.4.bias':u'classifier.3.bias'}
         sd = OrderedDict([(map[k] if k in map else k,v) for k,v in sd.items()])
-        torch.save(sd, path.join(download_path, "vgg19-d01eb7cb.pth"))
+        torch.save(sd, path.join(params.download_path, "vgg19-d01eb7cb.pth"))
 
-    if 'caffe-vgg16' in models:
+    if 'caffe-vgg16' in params.models:
         # Download the VGG-16 ILSVRC model and fix the layer names
         print("Downloading the VGG-16 ILSVRC model")
         sd = load_url("https://web.eecs.umich.edu/~justincj/models/vgg16-00b39a1b.pth")
         map = {'classifier.1.weight':u'classifier.0.weight', 'classifier.1.bias':u'classifier.0.bias', 'classifier.4.weight':u'classifier.3.weight', 'classifier.4.bias':u'classifier.3.bias'}
         sd = OrderedDict([(map[k] if k in map else k,v) for k,v in sd.items()])
-        torch.save(sd, path.join(download_path, "vgg16-00b39a1b.pth"))     
-    
-    if 'caffe-nin' in models:
+        torch.save(sd, path.join(params.download_path, "vgg16-00b39a1b.pth"))
+
+    if 'caffe-nin' in params.models:
         # Download the NIN model
-        print("Downloading the NIN model")  
+        print("Downloading the NIN model")
         fileurl = "https://raw.githubusercontent.com/ProGamerGov/pytorch-nin/master/nin_imagenet.pth"
         name = "nin_imagenet.pth"
-        download_file(fileurl, name, download_path)
-        
-    if 'caffe-googlenet-places205' in models:
+        download_file(fileurl, name, params.download_path)
+
+    if 'caffe-googlenet-places205' in params.models:
         # Download the Caffe GoogeLeNet Places205 model
-        print("Downloading the Places205 GoogeLeNet model")  
+        print("Downloading the Places205 GoogeLeNet model")
         fileurl = "https://github.com/ProGamerGov/pytorch-places/raw/master/googlenet_places205.pth"
         name = "googlenet_places205.pth"
-        download_file(fileurl, name, download_path)
-        
-    if 'caffe-googlenet-places365' in models:
-        # Download the Caffe GoogeLeNet Places365 model 
-        print("Downloading the Places365 GoogeLeNet model")  
+        download_file(fileurl, name, params.download_path)
+
+    if 'caffe-googlenet-places365' in params.models:
+        # Download the Caffe GoogeLeNet Places365 model
+        print("Downloading the Places365 GoogeLeNet model")
         fileurl = "https://github.com/ProGamerGov/pytorch-places/raw/master/googlenet_places365.pth"
         name = "googlenet_places365.pth"
-        download_file(fileurl, name, download_path)
-        
-    if 'caffe-googlenet-bvlc' in models:
+        download_file(fileurl, name, params.download_path)
+
+    if 'caffe-googlenet-bvlc' in params.models:
         # Download the Caffe BVLC GoogeLeNet model
-        print("Downloading the BVLC GoogeLeNet model")  
+        print("Downloading the BVLC GoogeLeNet model")
         fileurl = "https://github.com/ProGamerGov/pytorch-old-caffemodels/raw/master/bvlc_googlenet.pth"
         name = "bvlc_googlenet.pth"
-        download_file(fileurl, name, download_path)
-        
-    if 'caffe-googlenet-cars' in models:
+        download_file(fileurl, name, params.download_path)
+
+    if 'caffe-googlenet-cars' in params.models:
         # Download the Caffe GoogeLeNet Cars model
-        print("Downloading the Cars GoogeLeNet model")  
+        print("Downloading the Cars GoogeLeNet model")
         fileurl = "https://github.com/ProGamerGov/pytorch-old-caffemodels/raw/master/googlenet_finetune_web_cars.pth"
         name = "googlenet_finetune_web_cars.pth"
-        download_file(fileurl, name, download_path)
-        
-    if 'caffe-googlenet-sos' in models:
+        download_file(fileurl, name, params.download_path)
+
+    if 'caffe-googlenet-sos' in params.models:
         # Download the Caffe GoogeLeNet SOS model
-        print("Downloading the SOD GoogeLeNet model")  
+        print("Downloading the SOD GoogeLeNet model")
         fileurl = "https://github.com/ProGamerGov/pytorch-old-caffemodels/raw/master/GoogleNet_SOS.pth"
         name = "GoogleNet_SOS.pth"
-        download_file(fileurl, name, download_path)    
-        
-    if 'pytorch-vgg19' in models:
+        download_file(fileurl, name, params.download_path)
+
+    if 'pytorch-vgg19' in params.models:
         # Download the PyTorch VGG19 model
-        print("Downloading the PyTorch VGG 19 model")   
+        print("Downloading the PyTorch VGG 19 model")
         fileurl = "https://download.pytorch.org/models/vgg19-dcbb9e9d.pth"
         name = "vgg19-dcbb9e9d.pth"
-        download_file(fileurl, name, download_path)
-   
-    if 'pytorch-vgg16' in models:
+        download_file(fileurl, name, params.download_path)
+
+    if 'pytorch-vgg16' in params.models:
         # Download the PyTorch VGG16 model
         print("Downloading the PyTorch VGG 16 model")
         fileurl = "https://download.pytorch.org/models/vgg16-397923af.pth"
         name = "vgg16-397923af.pth"
-        download_file(fileurl, name, download_path)
+        download_file(fileurl, name, params.download_path)
 
-    if 'pytorch-googlenet' in models:
+    if 'pytorch-googlenet' in params.models:
         # Download the PyTorch GoogLeNet model
         print("Downloading the PyTorch GoogLeNet model")
         fileurl = "https://download.pytorch.org/models/googlenet-1378be20.pth"
         name = "googlenet-1378be20.pth"
-        download_file(fileurl, name, download_path)
+        download_file(fileurl, name, params.download_path)
 
-    if 'pytorch-inception' in models:
+    if 'pytorch-inception' in params.models:
         # Download the PyTorch Inception V3 model
         print("Downloading the PyTorch Inception V3 model")
         fileurl = "https://download.pytorch.org/models/inception_v3_google-1a9a5a14.pth"
         name = "inception_v3_google-1a9a5a14.pth"
-        download_file(fileurl, name, download_path)    
+        download_file(fileurl, name, params.download_path)
 
-    if 'tensorflow-inception5h' in models:
+    if 'tensorflow-inception5h' in params.models:
         # Download the Inception5h model
-        print("Downloading the Tensorflow Inception5h model")
+        print("Downloading the TensorFlow Inception5h model")
         fileurl = "https://github.com/ProGamerGov/pytorch-old-tensorflow-models/raw/master/inception5h.pth"
         name = "inception5h.pth"
-        download_file(fileurl, name, download_path)  
-    
-    if 'caffe-resnet-opennsfw' in models:
+        download_file(fileurl, name, params.download_path)
+
+    if 'keras-inceptionv3' in params.models:
+        # Download the Keras Inception V3 model
+        print("Downloading the Keras Inception V3 model")
+        fileurl = "https://github.com/ProGamerGov/pytorch-old-tensorflow-models/raw/master/inceptionv3_keras.pth"
+        name = "inceptionv3_keras.pth"
+        download_file(fileurl, name, params.download_path)
+
+    if 'caffe-resnet-opennsfw' in params.models:
         # Download the ResNet Yahoo Open NSFW model
         print("Downloading the ResNet Yahoo Open NSFW model")
         fileurl = "https://github.com/ProGamerGov/pytorch-old-caffemodels/raw/master/ResNet_50_1by2_nsfw.pth"
         name = "ResNet_50_1by2_nsfw.pth"
-        download_file(fileurl, name, download_path)
+        download_file(fileurl, name, params.download_path)
         
     print("All selected models have been successfully downloaded to " + download_path)
     quit()
