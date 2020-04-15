@@ -1,7 +1,7 @@
 import os
 import torch
 import torch.nn as nn
-import neural_dream.dream_utils as dream_utils
+import neural_dream.neural_dream_core.dream_utils as dream_utils
 from PIL import Image
 
 
