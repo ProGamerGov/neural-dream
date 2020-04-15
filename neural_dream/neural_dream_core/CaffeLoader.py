@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torchvision
 from torchvision import models
-from neural_dream.models import *
+from neural_dream.neural_dream_core.models import *
 
 
 class VGG(nn.Module):
