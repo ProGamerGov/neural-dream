@@ -6,12 +6,12 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="neural-dream",
-    version="0.0.2",
+    version="0.0.3",
     author="ProGamerGov",
     description="A PyTorch implementation of DeepDream",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    keywords='neural artistic neural-dream dream pytorch caffe neuralart neural-art hallucinations visualization feature-visualization mlart machine-learning-art aiart ai-art deepdream neuraldream pytorch-deepdream deepdream-pytorch tiling googlenet inception resnet vgg vgg16 vgg19 nin',
+    keywords='neural artistic neural-dream dream pytorch caffe neuralart neural-art hallucinations visualization feature-visualization mlart machine-learning-art aiart ai-art deepdream neuraldream pytorch-deepdream deepdream-pytorch tiling googlenet inception resnet vgg vgg16 vgg19 nin tensorflow keras inceptionv3 inception-v3',
     entry_points={
         'console_scripts': ["neural-dream = neural_dream.neural_dream:main"],
     },
