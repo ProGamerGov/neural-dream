@@ -85,16 +85,16 @@ def mask_tile(tile, overlap, side='bottom'):
 
 
 def get_tile_coords(d, tile_dim, overlap=0):
-    overlap = int(tile_dim * (1-overlap))
+    move = int(tile_dim * (1-overlap))
     c, tile_start, coords = 1, 0, [0]
     while tile_start + tile_dim < d:
-        tile_start = overlap * c
+        tile_start = move * c
         if tile_start + tile_dim >= d:
             coords.append(d - tile_dim)
         else:
             coords.append(tile_start)
         c += 1
-    return coords, overlap
+    return coords
 
 
 def get_tiles(img, tile_coords, tile_size, info_only=False):
@@ -123,53 +123,51 @@ def add_tiles(tiles, base_img, tile_coords, tile_size, overlap):
         for x in tile_coords[1]:
             mask_sides=''
             c_overlap = overlap.copy()
-            if len(tile_coords[0]) > 1:
-                if row == 0:
-                    if row == len(tile_coords[0]) - 2:
-                        mask_sides += 'bottom-special'
-                        c_overlap[1] = f_ovlp[0] # Change bottom overlap
-                    else:
-                        mask_sides += 'bottom'
-                elif row > 0 and row < len(tile_coords[0]) -2:
+            if row == 0:
+                if row == len(tile_coords[0]) - 2:
+                    mask_sides += 'bottom-special'
+                    c_overlap[1] = f_ovlp[0] # Change bottom overlap
+                else:
+                    mask_sides += 'bottom'
+            elif row > 0 and row < len(tile_coords[0]) -2:
+                mask_sides += 'bottom,top'
+            elif row == len(tile_coords[0]) - 2:
+                if f_ovlp[0] > 0:
+                    mask_sides += 'bottom-special,top'
+                    c_overlap[1] = f_ovlp[0] # Change bottom overlap
+                elif f_ovlp[0] <= 0:
                     mask_sides += 'bottom,top'
-                elif row == len(tile_coords[0]) - 2:
-                    if f_ovlp[0] > 0:
-                        mask_sides += 'bottom-special,top'
-                        c_overlap[1] = f_ovlp[0] # Change bottom overlap
-                    elif f_ovlp[0] <= 0:
-                        mask_sides += 'bottom,top'
-                elif row == len(tile_coords[0]) -1:
-                    if f_ovlp[0] > 0:
-                        mask_sides += 'top-special'
-                        c_overlap[0] = f_ovlp[0] # Change top overlap
-                    elif f_ovlp[0] <= 0:
-                        mask_sides += 'top'
+            elif row == len(tile_coords[0]) -1:
+                if f_ovlp[0] > 0:
+                    mask_sides += 'top-special'
+                    c_overlap[0] = f_ovlp[0] # Change top overlap
+                elif f_ovlp[0] <= 0:
+                    mask_sides += 'top'
 
-            if len(tile_coords[1]) > 1:
-                if column == 0:
-                    if column == len(tile_coords[1]) -2:
-                        mask_sides += ',right-special'
-                        c_overlap[2] = f_ovlp[1] # Change right overlap
-                    else:
-                        mask_sides += ',right'
-                elif column > 0 and column < len(tile_coords[1]) -2:
+            if column == 0:
+                if column == len(tile_coords[1]) -2:
+                    mask_sides += ',right-special'
+                    c_overlap[2] = f_ovlp[1] # Change right overlap
+                else:
+                    mask_sides += ',right'
+            elif column > 0 and column < len(tile_coords[1]) -2:
+                mask_sides += ',right,left'
+            elif column == len(tile_coords[1]) -2:
+                if f_ovlp[1] > 0:
+                    mask_sides += ',right-special,left'
+                    c_overlap[2] = f_ovlp[1] # Change right overlap
+                elif f_ovlp[1] <= 0:
                     mask_sides += ',right,left'
-                elif column == len(tile_coords[1]) -2:
-                    if f_ovlp[1] > 0:
-                        mask_sides += ',right-special,left'
-                        c_overlap[2] = f_ovlp[1] # Change right overlap
-                    elif f_ovlp[1] <= 0:
-                        mask_sides += ',right,left'
-                elif column == len(tile_coords[1]) -1:
-                    if f_ovlp[1] > 0:
-                        mask_sides += ',left-special'
-                        c_overlap[3] = f_ovlp[1] # Change left overlap
-                    elif f_ovlp[1] <= 0:
-                        mask_sides += ',left'
 
-            if t < len(tiles):
-                tile = mask_tile(tiles[t], c_overlap, side=mask_sides)
-                base_img[:, :, y:y+tile_size[0], x:x+tile_size[1]] = base_img[:, :, y:y+tile_size[0], x:x+tile_size[1]] + tile
+            elif column == len(tile_coords[1]) -1:
+                if f_ovlp[1] > 0:
+                    mask_sides += ',left-special'
+                    c_overlap[3] = f_ovlp[1] # Change left overlap
+                elif f_ovlp[1] <= 0:
+                    mask_sides += ',left'
+
+            tile = mask_tile(tiles[t], c_overlap, side=mask_sides)
+            base_img[:, :, y:y+tile_size[0], x:x+tile_size[1]] = base_img[:, :, y:y+tile_size[0], x:x+tile_size[1]] + tile
             t+=1
             column+=1
         row+=1
@@ -182,8 +180,9 @@ def tile_setup(tile_size, overlap_percent, base_size):
         tile_size = (tile_size, tile_size)
     if type(overlap_percent) is not tuple and type(overlap_percent) is not list:
         overlap_percent = (overlap_percent, overlap_percent)
-    x_coords, x_ovlp = get_tile_coords(base_size[1], tile_size[1], overlap_percent[1])
-    y_coords, y_ovlp = get_tile_coords(base_size[0], tile_size[0], overlap_percent[0])
+    x_coords = get_tile_coords(base_size[1], tile_size[1], overlap_percent[1])
+    y_coords = get_tile_coords(base_size[0], tile_size[0], overlap_percent[0])
+    y_ovlp, x_ovlp = int(tile_size[0] * overlap_percent[0]), int(tile_size[1] * overlap_percent[1])
     return (y_coords, x_coords), tile_size, [y_ovlp, y_ovlp, x_ovlp, x_ovlp]
 
 

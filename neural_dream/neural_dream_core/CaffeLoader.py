@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torchvision
 from torchvision import models
-from neural_dream.neural_dream_core.models import *
+from neural_dream.models import *
 
 
 class VGG(nn.Module):
@@ -256,7 +256,7 @@ def build_googlenet_list(cnn):
                  name = main_layers[i] + '/' + ax[bl]
                  layer_name_list.append(name)
         elif isinstance(layer, nn.MaxPool2d) or isinstance(layer, nn.AdaptiveAvgPool2d) \
-		or isinstance(layer, nn.Dropout) or isinstance(layer, nn.Linear):
+        or isinstance(layer, nn.Dropout) or isinstance(layer, nn.Linear):
             layer_name_list.append(main_layers[i])
     return layer_name_list
 
@@ -353,6 +353,8 @@ def modelSelector(model_file, pooling):
          print("Inception Architecture Detected")
          if 'inception5h' in model_file:
              cnn, layerList = Inception5h(), inception_layer_names('5h')
+         elif 'keras' in model_file:
+             cnn, layerList = InceptionV3Keras(), inception_layer_names('keras-wtop')
          else:
              cnn, layerList = models.inception_v3(pretrained=False, transform_input=False), ''
     elif "resnet" in model_file:
@@ -423,9 +425,9 @@ def loadCaffemodel(model_file, pooling, use_gpu, disable_check, add_classifier=F
             has_inception = True
         else:
             layerList, has_inception = build_googlenet_list(cnn), True
-    elif any(name in model_file.lower() for name in ic_dict['inceptionv3']):
+    elif any(name in model_file.lower() for name in ic_dict['inceptionv3']) and 'keras' not in model_file.lower():
         layerList, has_inception = build_inceptionv3_list(cnn), True
-    elif 'inception5h' in model_file.lower() or 'resnet' in model_file.lower():
+    elif 'inception5h' in model_file.lower() or 'resnet' in model_file.lower() or 'keras' in model_file.lower():
         has_inception = True
     else:
         cnn, has_inception = cnn.features, False

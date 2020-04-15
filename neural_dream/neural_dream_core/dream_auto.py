@@ -6,16 +6,19 @@ def model_name_list():
     'vgg16_hybrid1365.pth', 'fcn32s-heavy-pascal.pth', 'nyud-fcn32s-color-heavy.pth', \
     'pascalcontext-fcn32s-heavy.pth', 'siftflow-fcn32s-heavy.pth', 'channel_pruning.pth', \
     'googlenet_places205.pth', 'googlenet_places365.pth', 'resnet_50_1by2_nsfw.pth', \
-    'bvlc_googlenet.pth', 'googlenet_finetune_web_cars.pth', 'googlenet_sos.pth']
-    return pytorch_names, caffe_names
+    'bvlc_googlenet.pth', 'googlenet_finetune_web_cars.pth', 'googlenet_sos.pth', 'inception5h']
+    keras_names = ['inceptionv3_keras.pth']
+    return pytorch_names, caffe_names, keras_names
 
 # Automatically determine model type
 def auto_model_mode(model_name):
-    pytorch_names, caffe_names = model_name_list()
+    pytorch_names, caffe_names, keras_names = model_name_list()
     if any(name.lower() in model_name.lower() for name in pytorch_names):
         input_mode = 'pytorch'
     elif any(name.lower() in model_name.lower() for name in caffe_names):
         input_mode = 'caffe'
+    elif any(name.lower() in model_name.lower() for name in keras_names):
+        input_mode = 'keras'
     else:
         raise ValueError("Model not recognized, please manually specify the model type.")
     return input_mode
@@ -23,7 +26,7 @@ def auto_model_mode(model_name):
 
 # Automatically determine preprocessing to use for model
 def auto_mean(model_name, model_type):
-    pytorch_names, caffe_names = model_name_list()
+    pytorch_names, caffe_names, keras_names = model_name_list()
     if any(name.lower() in model_name.lower() for name in pytorch_names) or model_type == 'pytorch':
         input_mean = [0.485, 0.456, 0.406] # PyTorch Imagenet
     elif any(name.lower() in model_name.lower() for name in caffe_names) or model_type == 'caffe':
@@ -34,6 +37,8 @@ def auto_mean(model_name, model_type):
             input_mean = [104.051, 112.514, 116.676] # Caffe Places365
         elif 'resnet_50_1by2_nsfw.pth' in model_name.lower():
             input_mean = [104, 117, 123] # Caffe Open NSFW
+    elif any(name.lower() in model_name.lower() for name in keras_names) or model_type == 'keras':
+        input_mean = [0, 0, 0]
     else:
         raise ValueError("Model not recognized, please manually specify the model type or model mean.")
     return input_mean
