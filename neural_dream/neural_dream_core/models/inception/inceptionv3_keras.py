@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import neural_dream.helper_layers as helper_layers
+import neural_dream.neural_dream_core.helper_layers as helper_layers
 
 
 class InceptionV3Keras(nn.Module):
