@@ -79,9 +79,9 @@ def main():
 
     if 'caffe-googlenet-sos' in params.models:
         # Download the Caffe GoogeLeNet SOS model
-        print("Downloading the SOD GoogeLeNet model")
-        fileurl = "https://github.com/ProGamerGov/pytorch-old-caffemodels/raw/master/GoogleNet_SOS.pth"
-        name = "GoogleNet_SOS.pth"
+        print("Downloading the SOS GoogeLeNet model")
+        fileurl = "https://github.com/ProGamerGov/pytorch-old-caffemodels/raw/master/googlenet_sos.pth"
+        name = "googlenet_sos.pth"
         download_file(fileurl, name, params.download_path)
 
     if 'pytorch-vgg19' in params.models:
@@ -129,8 +129,8 @@ def main():
     if 'caffe-resnet-opennsfw' in params.models:
         # Download the ResNet Yahoo Open NSFW model
         print("Downloading the ResNet Yahoo Open NSFW model")
-        fileurl = "https://github.com/ProGamerGov/pytorch-old-caffemodels/raw/master/ResNet_50_1by2_nsfw.pth"
-        name = "ResNet_50_1by2_nsfw.pth"
+        fileurl = "https://github.com/ProGamerGov/pytorch-old-caffemodels/raw/master/resnet_50_1by2_nsfw.pth"
+        name = "resnet_50_1by2_nsfw.pth"
         download_file(fileurl, name, params.download_path)
 
     print("All selected models have been successfully downloaded")
