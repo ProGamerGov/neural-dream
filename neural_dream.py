@@ -74,7 +74,7 @@ parser.add_argument("-overlap_percent", type=float, default=0.5)
 parser.add_argument("-print_tile", type=int, default=0)
 parser.add_argument("-disable_roll", action='store_true')
 parser.add_argument("-print_tile_iter", type=int, default=0)
-parser.add_argument("-image_capture_size", help="Image size for initial capture, and classification", type=int, default=0)
+parser.add_argument("-image_capture_size", help="Image size for initial capture, and classification", type=int, default=512)
 
 # Gif options
 parser.add_argument("-create_gif", action='store_true')
@@ -183,7 +183,7 @@ def main():
     for i in dream_losses:
         i.mode = 'capture'
 
-    if params.image_capture_size == 0:
+    if params.image_capture_size == -1:
         net_base(base_img.clone())
     else:
         image_capture_size = tuple([int((float(params.image_capture_size) / max(base_img.size()))*x) for x in (base_img.size(2), base_img.size(3))])
