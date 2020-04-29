@@ -19,7 +19,7 @@ def roll_tensor(tensor, h_shift=None, w_shift=None):
     return tensor, h_shift, w_shift
 
 
-# Define an nn Module to perform guassian blurring
+# Define an nn Module to perform gaussian blurring
 class GaussianBlur(nn.Module):
     def __init__(self, k_size, sigma):
         super(GaussianBlur, self).__init__()
@@ -67,19 +67,19 @@ class GaussianBlur(nn.Module):
         return input
 
 
-# Define a Module to create guassian blur for laplacian pyramids
+# Define a Module to create gaussian blur for laplacian pyramids
 class GaussianBlurLP(GaussianBlur):
 
     def __init__(self, input, k_size=5, sigma=0):
         super(GaussianBlur, self).__init__()
-        self.guass_blur = GaussianBlur(k_size, sigma)
-        self.guass_blur.capture(input)
+        self.gauss_blur = GaussianBlur(k_size, sigma)
+        self.gauss_blur.capture(input)
 
     def forward(self, input):
-        return self.guass_blur(input)
+        return self.gauss_blur(input)
 
 
-# Define an nn Module to apply guassian blur as a layer
+# Define an nn Module to apply gaussian blur as a layer
 class GaussianBlurLayer(nn.Module):
 
     def __init__(self, k_size=5, sigma=0):
