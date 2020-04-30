@@ -434,9 +434,9 @@ def main():
                 current_img = dream_image.zoom(current_img, params.zoom, params.zoom_mode)
 
 
-def save_output(t, save_img, content_image, iter_name, model_mean):
+def save_output(t, save_img, content_image, iter_name, model_mean, no_num=False):
     output_filename, file_extension = os.path.splitext(params.output_image)
-    if t == params.num_iterations:
+    if t == params.num_iterations and not no_num:
         filename = output_filename + str(file_extension)
     else:
         filename = str(output_filename) + iter_name + str(file_extension)
@@ -456,7 +456,8 @@ def maybe_save(t, save_img, content_image, input_mean, start_num, leading_zeros)
     should_save = params.save_iter > 0 and t % params.save_iter == 0
     should_save = should_save or t == params.num_iterations
     if should_save:
-        save_output(t, save_img, content_image, "_" + str(t+start_num).zfill(leading_zeros), input_mean)
+        no_num = True if leading_zeros > 0 else False
+        save_output(t, save_img, content_image, "_" + str(t+start_num).zfill(leading_zeros), input_mean, no_num)
 
 
 def maybe_save_octave(t, n, o, save_img, content_image, input_mean):
