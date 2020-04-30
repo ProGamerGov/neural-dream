@@ -136,6 +136,7 @@ path or a full absolute path.
 **Output options**:
 * `-output_image`: Name of the output image. Default is `out.png`.
 * `-output_start_num`: The number to start output image names at. Default is set to `1`.
+* `-leading_zeros`: The number of leading zeros to use for output image names. Default is set to `0` to disable leading zeros.
 * `-print_iter`: Print progress every `print_iter` iterations. Set to `0` to disable printing.
 * `-print_octave_iter`: Print octave progress every `print_octave_iter` iterations. Default is set to `0` to disable printing. If tiling is enabled, then octave progress will be printed every `print_octave_iter` octaves.
 * `-save_iter`: Save the image every `save_iter` iterations. Set to `0` to disable saving intermediate results.
