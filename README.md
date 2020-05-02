@@ -173,7 +173,7 @@ path or a full absolute path.
 * `-overlap_percent`: The percentage of overlap to use for the tiles. Default is `50`.
 * `-print_tile`: Print the current tile being processed every `print_tile` tiles without any other information. Default is set to `0` to disable printing.
 * `-print_tile_iter`: Print tile progress every `print_tile_iter` iterations. Default is set to `0` to disable printing.
-* `-image_capture_size`: The image size to use for the initial full image capture and optional `-classify` parameter. Default is set to `0` to disable it and `image_size` is used instead.
+* `-image_capture_size`: The image size to use for the initial full image capture and optional `-classify` parameter. Default is set to `512`. Set to `0` disable it and `image_size` is used instead.
 
 **GIF options:**
 * `-create_gif`: Whether to create a GIF from the output images after all iterations have been completed.
