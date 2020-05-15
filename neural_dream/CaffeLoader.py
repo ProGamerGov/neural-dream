@@ -409,7 +409,7 @@ def add_classifier_layers(cnn, pooling='avg'):
 def loadCaffemodel(model_file, pooling, use_gpu, disable_check, add_classifier=False):
     cnn, layerList = modelSelector(str(model_file).lower(), pooling)
 
-    cnn.load_state_dict(torch.load(model_file), strict=(not disable_check))
+    cnn.load_state_dict(torch.load(model_file, map_location='cpu'), strict=(not disable_check))
     print("Successfully loaded " + str(model_file))
 
     # Maybe convert the model to cuda now, to avoid later issues
