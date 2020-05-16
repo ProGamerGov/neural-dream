@@ -158,7 +158,6 @@ def add_tiles(tiles, base_img, tile_coords, tile_size, overlap):
                     c_overlap[2] = f_ovlp[1] # Change right overlap
                 elif f_ovlp[1] <= 0:
                     mask_sides += ',right,left'
-
             elif column == len(tile_coords[1]) -1:
                 if f_ovlp[1] > 0:
                     mask_sides += ',left-special'
