@@ -7,6 +7,7 @@ import torch.optim as optim
 import torchvision.transforms as transforms
 from PIL import Image
 from neural_dream.CaffeLoader import loadCaffemodel, ModelParallel
+from neural_dream.models.dreamcreator.inceptionv1_caffe import relu_to_redirected_relu
 import neural_dream.dream_utils as dream_utils
 import neural_dream.loss_layers as dream_loss_layers
 import neural_dream.dream_image as dream_image
@@ -33,6 +34,7 @@ parser.add_argument("-optimizer", choices=['lbfgs', 'adam'], default='adam')
 parser.add_argument("-learning_rate", type=float, default=1.5)
 parser.add_argument("-lbfgs_num_correction", type=int, default=100)
 parser.add_argument("-loss_mode", choices=['bce', 'mse', 'mean', 'norm', 'l2', 'abs_mean', 'abs_l2'], default='l2')
+parser.add_argument("-use_redirected_relu", action='store_true')
 
 # Output options
 parser.add_argument("-print_iter", type=int, default=1)
@@ -144,6 +146,9 @@ def main():
              params.dream_layers += ',classifier'
          if params.label_file == '':
              labels = list(range(0, 1000))
+
+    if params.use_redirected_relu:
+        relu_to_redirected_relu(cnn)
 
     dream_layers = params.dream_layers.split(',')
     start_params = (dtype, params.random_transforms, params.jitter, params.tv_weight, params.l2_weight, params.layer_sigma)
