@@ -79,7 +79,7 @@ def main():
 
     if 'caffe-googlenet-sos' in params.models:
         # Download the Caffe GoogeLeNet SOS model
-        print("Downloading the SOD GoogeLeNet model")
+        print("Downloading the SOS GoogeLeNet model")
         fileurl = "https://github.com/ProGamerGov/pytorch-old-caffemodels/raw/master/GoogleNet_SOS.pth"
         name = "GoogleNet_SOS.pth"
         download_file(fileurl, name, params.download_path)

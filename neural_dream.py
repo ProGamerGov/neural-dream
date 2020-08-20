@@ -67,6 +67,7 @@ parser.add_argument("-fft_block", type=int, default=25)
 # Zoom options
 parser.add_argument("-zoom", type=int, default=0)
 parser.add_argument("-zoom_mode", choices=['percent', 'pixel'], default='percent')
+parser.add_argument("-leading_zeros", type=int, default=0)
 
 # Tile options
 parser.add_argument("-tile_size", type=int, default=0)
@@ -74,7 +75,7 @@ parser.add_argument("-overlap_percent", type=float, default=0.5)
 parser.add_argument("-print_tile", type=int, default=0)
 parser.add_argument("-disable_roll", action='store_true')
 parser.add_argument("-print_tile_iter", type=int, default=0)
-parser.add_argument("-image_capture_size", help="Image size for initial capture, and classification", type=int, default=0)
+parser.add_argument("-image_capture_size", help="Image size for initial capture, and classification", type=int, default=512)
 
 # Gif options
 parser.add_argument("-create_gif", action='store_true')
@@ -183,7 +184,7 @@ def main():
     for i in dream_losses:
         i.mode = 'capture'
 
-    if params.image_capture_size == 0:
+    if params.image_capture_size == -1:
         net_base(base_img.clone())
     else:
         image_capture_size = tuple([int((float(params.image_capture_size) / max(base_img.size()))*x) for x in (base_img.size(2), base_img.size(3))])
@@ -293,7 +294,7 @@ def main():
                     current_img = img.clone()
 
             maybe_print(iter, total_loss[0], total_dream_losses)
-            maybe_save(iter, current_img, content_image, input_mean, output_start_num)
+            maybe_save(iter, current_img, content_image, input_mean, output_start_num, params.leading_zeros)
             total_dream_losses, total_loss = [], [0]
 
             if params.classify > 0:
@@ -420,7 +421,7 @@ def main():
                 octave_losses, tile_losses = [], []
 
             maybe_print(iter, total_loss[0], total_dream_losses)
-            maybe_save(iter, current_img, content_image, input_mean, output_start_num)
+            maybe_save(iter, current_img, content_image, input_mean, output_start_num, params.leading_zeros)
             total_dream_losses, total_loss = [], [0]
 
             if params.classify > 0:
@@ -433,9 +434,9 @@ def main():
                 current_img = dream_image.zoom(current_img, params.zoom, params.zoom_mode)
 
 
-def save_output(t, save_img, content_image, iter_name, model_mean):
+def save_output(t, save_img, content_image, iter_name, model_mean, no_num=False):
     output_filename, file_extension = os.path.splitext(params.output_image)
-    if t == params.num_iterations:
+    if t == params.num_iterations and not no_num:
         filename = output_filename + str(file_extension)
     else:
         filename = str(output_filename) + iter_name + str(file_extension)
@@ -451,11 +452,12 @@ def save_output(t, save_img, content_image, iter_name, model_mean):
         dream_image.create_gif(output_filename, params.frame_duration)
 
 
-def maybe_save(t, save_img, content_image, input_mean, start_num):
+def maybe_save(t, save_img, content_image, input_mean, start_num, leading_zeros):
     should_save = params.save_iter > 0 and t % params.save_iter == 0
     should_save = should_save or t == params.num_iterations
     if should_save:
-        save_output(t, save_img, content_image, "_" + str(t+start_num), input_mean)
+        no_num = True if leading_zeros > 0 else False
+        save_output(t, save_img, content_image, "_" + str(t+start_num).zfill(leading_zeros), input_mean, no_num)
 
 
 def maybe_save_octave(t, n, o, save_img, content_image, input_mean):
