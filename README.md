@@ -132,6 +132,7 @@ path or a full absolute path.
 * `-learning_rate`: Learning rate to use with the ADAM and L-BFGS optimizers. Default is `1.5`. On other DeepDream projects this parameter is commonly called 'step size'.
 * `-normalize_weights`: If this flag is present, dream weights will be divided by the number of channels for each layer. Idea from [PytorchNeuralStyleTransfer](https://github.com/leongatys/PytorchNeuralStyleTransfer).
 * `-loss_mode`: The DeepDream loss mode; `bce`, `mse`, `mean`, `norm`, or `l2`; default is `l2`.
+* `-use_redirected_relu`: Enabling this flag will replace every ReLU layer with the [RedirectedReLU from Lucent](https://github.com/greentfrapp/lucent/blob/master/lucent/modelzoo/inceptionv1/helper_layers.py).
 
 **Output options**:
 * `-output_image`: Name of the output image. Default is `out.png`.
