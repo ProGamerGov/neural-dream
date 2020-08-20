@@ -10,3 +10,7 @@ from neural_dream.models.inception.inception_layer_names import inception_layer_
 
 from neural_dream.models.resnet.resnet_50_1by2_nsfw import ResNet_50_1by2_nsfw
 from neural_dream.models.resnet.resnet_layer_names import resnet_layer_names
+
+from neural_dream.models.dreamcreator.inceptionv1_caffe import InceptionV1_Caffe as DreamCreatorInceptionV1
+from neural_dream.models.dreamcreator.inceptionv1_caffe import load_model as load_dream_creator
+from neural_dream.models.dreamcreator.inceptionv1_caffe import relu_to_redirected_relu
