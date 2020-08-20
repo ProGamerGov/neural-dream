@@ -407,41 +407,58 @@ def add_classifier_layers(cnn, pooling='avg'):
 
 # Load the model, and configure pooling layer type
 def loadCaffemodel(model_file, pooling, use_gpu, disable_check, add_classifier=False):
-    cnn, layerList = modelSelector(str(model_file).lower(), pooling)
-
-    cnn.load_state_dict(torch.load(model_file, map_location='cpu'), strict=(not disable_check))
-    print("Successfully loaded " + str(model_file))
-
-    # Maybe convert the model to cuda now, to avoid later issues
-    if "c" not in str(use_gpu).lower() or "c" not in str(use_gpu[0]).lower():
-        cnn = cnn.cuda()
-
-    if not isinstance(cnn, NIN) and not any(name in model_file.lower() for name in ic_dict) and add_classifier:
-        cnn, has_inception = add_classifier_layers(cnn, pooling), False
-    elif any(name in model_file.lower() for name in ic_dict['googlenet']):
-        if '205' in model_file or '365' in model_file:
-            has_inception = True
-        elif 'cars' in model_file.lower() or 'sos' in model_file.lower() or 'bvlc' in model_file.lower():
-            has_inception = True
-        else:
-            layerList, has_inception = build_googlenet_list(cnn), True
-    elif any(name in model_file.lower() for name in ic_dict['inceptionv3']) and 'keras' not in model_file.lower():
-        layerList, has_inception = build_inceptionv3_list(cnn), True
-    elif 'inception5h' in model_file.lower() or 'resnet' in model_file.lower() or 'keras' in model_file.lower():
-        has_inception = True
-    else:
-        cnn, has_inception = cnn.features, False
-
-    if has_inception:
+    checkpoint = torch.load(model_file, map_location='cpu')
+    try:
+        # Load list that contains (normalization mean, normalization standard deviation) in RGB format
+        norm_vals = checkpoint['normalize_params'] # List of floats for preprocessing and deprocessing
+        mean_vals = norm_vals[0]
+        mean_vals.reverse()
+        mean_vals =  ','.join(map(str, mean_vals))
+        cnn, _, _ = load_dream_creator(model_file)
         cnn.eval()
         cnn.has_inception = True
-    else:
-        cnn.has_inception = False
-    if not any(name in model_file.lower() for name in ic_dict):
-        print_loadcaffe(cnn, layerList)
-
-    try:
-        cnn.add_layers()
+        layerList = ''
+        # Maybe convert the model to cuda now, to avoid later issues
+        if "c" not in str(use_gpu).lower() or "c" not in str(use_gpu[0]).lower():
+            cnn = cnn.cuda()
     except:
-        pass
-    return cnn, layerList
+        print('Fail')
+        mean_vals = None
+        cnn, layerList = modelSelector(str(model_file).lower(), pooling)
+    
+        cnn.load_state_dict(checkpoint, strict=(not disable_check))
+        print("Successfully loaded " + str(model_file))
+    
+        # Maybe convert the model to cuda now, to avoid later issues
+        if "c" not in str(use_gpu).lower() or "c" not in str(use_gpu[0]).lower():
+            cnn = cnn.cuda()
+    
+        if not isinstance(cnn, NIN) and not any(name in model_file.lower() for name in ic_dict) and add_classifier:
+            cnn, has_inception = add_classifier_layers(cnn, pooling), False
+        elif any(name in model_file.lower() for name in ic_dict['googlenet']):
+            if '205' in model_file or '365' in model_file:
+                has_inception = True
+            elif 'cars' in model_file.lower() or 'sos' in model_file.lower() or 'bvlc' in model_file.lower():
+                has_inception = True
+            else:
+                layerList, has_inception = build_googlenet_list(cnn), True
+        elif any(name in model_file.lower() for name in ic_dict['inceptionv3']) and 'keras' not in model_file.lower():
+            layerList, has_inception = build_inceptionv3_list(cnn), True
+        elif 'inception5h' in model_file.lower() or 'resnet' in model_file.lower() or 'keras' in model_file.lower():
+            has_inception = True
+        else:
+            cnn, has_inception = cnn.features, False
+    
+        if has_inception:
+            cnn.eval()
+            cnn.has_inception = True
+        else:
+            cnn.has_inception = False
+        if not any(name in model_file.lower() for name in ic_dict):
+            print_loadcaffe(cnn, layerList)
+    
+        try:
+            cnn.add_layers()
+        except:
+            pass
+    return cnn, layerList, mean_vals
