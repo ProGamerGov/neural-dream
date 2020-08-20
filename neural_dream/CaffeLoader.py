@@ -415,6 +415,7 @@ def loadCaffemodel(model_file, pooling, use_gpu, disable_check, add_classifier=F
         mean_vals.reverse()
         mean_vals =  ','.join(map(str, mean_vals))
         cnn, _, _ = load_dream_creator(model_file)
+        print("Successfully loaded Dream-Creator model: " + str(model_file))
         cnn.eval()
         cnn.has_inception = True
         layerList = ''
@@ -422,7 +423,6 @@ def loadCaffemodel(model_file, pooling, use_gpu, disable_check, add_classifier=F
         if "c" not in str(use_gpu).lower() or "c" not in str(use_gpu[0]).lower():
             cnn = cnn.cuda()
     except:
-        print('Fail')
         mean_vals = None
         cnn, layerList = modelSelector(str(model_file).lower(), pooling)
     
