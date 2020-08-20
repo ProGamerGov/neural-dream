@@ -119,7 +119,10 @@ Image.MAX_IMAGE_PIXELS = 1000000000 # Support gigapixel images
 def main():
     dtype, multidevice, backward_device = setup_gpu()
 
-    cnn, layerList = loadCaffemodel(params.model_file, params.pooling, params.gpu, params.disable_check, True)
+    cnn, layerList, mean_vals = loadCaffemodel(params.model_file, params.pooling, params.gpu, params.disable_check, True)
+    params.model_type = 'caffe' if mean_vals != None else params.model_type
+    params.model_mean = mean_vals if mean_vals != None else params.model_mean
+
     has_inception = cnn.has_inception
     if params.print_layers:
         print_layers(layerList, params.model_file, has_inception)
