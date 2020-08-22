@@ -8,25 +8,31 @@ import torch.nn.functional as F
 
 
 # Build the model definition
-def build_model(model_file='pt_places365.pth', num_classes=120, load_branches=True):
-    base_list = {'pt_places365.pth': 365, 'pt_inception5h.pth': 1008, 'pt_bvlc.pth': 1000}
+def build_model(model_file='pt_bvlc.pth', mode='bvlc', num_classes=120, load_branches=True):
+    base_list = {'pt_bvlc.pth': (1000, 'bvlc'), 'pt_places365.pth': (365, 'p365'), 'pt_inception5h.pth': (1008, '5h')}
     base_name = os.path.basename(model_file)
     if base_name.lower() in base_list:
-        load_classes = base_list[base_name.lower()]
+        load_classes, mode = base_list[base_name.lower()]
     else:
         load_classes = num_classes
 
-    cnn = InceptionV1_Caffe(load_classes, mode='bvlc', load_branches=load_branches)
+    cnn = InceptionV1_Caffe(load_classes, mode=mode, load_branches=load_branches)
 
     if base_name.lower() not in base_list:
         cnn.replace_fc(load_classes, load_branches)
     return cnn
 
 
-def load_model(model_file, num_classes=120, has_branches=True):
+def load_model(model_file, num_classes=120, has_branches=True, mode='bvlc'):
     checkpoint = torch.load(model_file, map_location='cpu')
 
     # Attempt to load model class info
+    try:
+        base_model = checkpoint['base_model']
+    except:
+        base_model = None
+    mode = mode if base_model == None else base_model
+
     try:
         loaded_classes = checkpoint['num_classes']
     except:
@@ -43,7 +49,7 @@ def load_model(model_file, num_classes=120, has_branches=True):
         h_branches = None
     has_branches = has_branches if h_branches == None else h_branches
 
-    cnn = build_model(model_file, num_classes, load_branches=has_branches)
+    cnn = build_model(model_file, mode, num_classes, load_branches=has_branches)
 
     if type(checkpoint) == dict:
         model_keys = checkpoint.keys()
