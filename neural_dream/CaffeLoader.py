@@ -412,7 +412,6 @@ def loadCaffemodel(model_file, pooling, use_gpu, disable_check, add_classifier=F
         # Load list that contains (normalization mean, normalization standard deviation) in RGB format
         norm_vals = checkpoint['normalize_params'] # List of floats for preprocessing and deprocessing
         mean_vals = norm_vals[0]
-        mean_vals.reverse()
         mean_vals =  ','.join(map(str, mean_vals))
         cnn, _, _ = load_dream_creator(model_file)
         print("Successfully loaded Dream-Creator model: " + str(model_file))
