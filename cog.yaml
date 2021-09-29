@@ -1,0 +1,13 @@
+build:
+  python_version: "3.7"
+  gpu: true
+  python_packages:
+    - neural_dream==0.0.4
+    - opencv-python==4.5.3.56
+  run:
+    - "mkdir ./models && neural-dream -download_models -download_path ./models"
+  system_packages:
+    - ffmpeg
+    - libsm6
+    - libxext6
+predict: "predict.py:Predictor"
