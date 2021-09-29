@@ -1,4 +1,6 @@
 # neural-dream
+<a href="https://replicate.ai/progamergov/neural-dream"><img src="https://img.shields.io/static/v1?label=Replicate&message=Demo and Docker Image&color=darkgreen" height=20></a>
+
 
 This is a PyTorch implementation of DeepDream. The code is based on [neural-style-pt](https://github.com/ProGamerGov/neural-style-pt).
 
